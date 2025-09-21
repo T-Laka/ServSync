@@ -1,21 +1,10 @@
-import express from 'express';
-import insuranceTypeController from '../controllers/insuranceType.controller.js';
+// src/routes/insuranceType.routes.js
+import { Router } from 'express';
+import { createInsuranceType, listInsuranceTypes } from '../controllers/insuranceType.controller.js ';
+// import auth from '../middlewares/auth.js' // hook later
+const router = Router();
 
-const router = express.Router();
-
-// Get all insurance types
-router.get('/', insuranceTypeController.getInsuranceTypes);
-
-// Get insurance type by ID
-router.get('/:id', insuranceTypeController.getInsuranceTypeById);
-
-// Create a new insurance type
-router.post('/', insuranceTypeController.createInsuranceType);
-
-// Update an existing insurance type
-router.put('/update', insuranceTypeController.updateInsuranceType);
-
-// Delete an insurance type by ID
-router.delete('/:id', insuranceTypeController.deleteInsuranceType);
+router.post('/', /*auth('ADMIN'),*/ createInsuranceType);
+router.get('/', /*auth(),*/ listInsuranceTypes);
 
 export default router;
