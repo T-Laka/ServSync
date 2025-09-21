@@ -1,25 +1,20 @@
+// src/models/Branch.model.js
 import mongoose from 'mongoose';
-import InsuranceType from './insuranceType.model.js';
+const { Schema, model, Types } = mongoose;
 
-const branchSchema = new mongoose.Schema({
-  branchName: { type: String, required: true },
-  location: { type: String, required: true },
-  counters: [
-    {
-      counterName: { type: String, required: true },
-      insuranceType: { type: mongoose.Schema.Types.ObjectId, ref: 'InsuranceType', required: true },
-      timeSlots: [
-        {
-          startTime: { type: Date, required: true },
-          endTime: { type: Date, required: true },
-          availableSlots: { type: Number, required: true },
-          bookedSlots: { type: Number, required: true }
-        }
-      ]
-    }
-  ]
-});
+const CounterSchema = new Schema({
+  name: { type: String, required: true },
+  insuranceType: { type: Types.ObjectId, ref: 'InsuranceType', required: true },
+  isActive: { type: Boolean, default: true }
+}, { _id: true });
 
-const Branch = mongoose.model('Branch', branchSchema);
+const BranchSchema = new Schema({
+  name: { type: String, required: true },
+  code: { type: String, required: true, unique: true }, // e.g., NITF-CMB-01
+  address: { type: String, required: true },
+  counters: [CounterSchema]
+}, { timestamps: true });
 
-export default Branch;
+BranchSchema.index({ code: 1 }, { unique: true });
+
+export default model('Branch', BranchSchema);

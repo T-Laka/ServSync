@@ -1,36 +1,43 @@
+// src/models/Session.model.js
 import mongoose from 'mongoose';
-import Branch from './branch.model.js';
-import InsuranceType from './insuranceType.model.js';
+const { Schema, model, Types } = mongoose;
 
-const sessionSchema = new mongoose.Schema({
-  branch: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Branch', 
-    required: true
-  },
-  counter: { 
-    type: String, 
-    required: true
-  },
-  insuranceType: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'InsuranceType', 
-    required: true
-  },
-  timeSlots: [
-    {
-      startTime: { type: Date, required: true },
-      endTime: { type: Date, required: true },
-      availableSlots: { type: Number, required: true },
-      bookedSlots: { type: Number, required: true }
-    }
-  ],
-  nonWorkingDays: { 
-    type: [Date], 
-    default: [] 
-  }
+const SlotSchema = new Schema({
+  slotId: { type: Schema.Types.ObjectId, default: () => new Types.ObjectId(), immutable: true },
+  startTime: { type: Date, required: true },
+  endTime: { type: Date, required: true },
+  capacity: { type: Number, required: true, min: 1 },
+  booked: { type: Number, default: 0, min: 0 },
+  overbook: { type: Number, default: 0 }
+}, { _id: false });
+
+const SessionSchema = new Schema({
+  branch: { type: Types.ObjectId, ref: 'Branch', required: true },
+  counterId: { type: Types.ObjectId, required: true }, // refers to Branch.counters._id
+  insuranceType: { type: Types.ObjectId, ref: 'InsuranceType', required: true },
+  serviceDate: { type: Date, required: true }, // UTC day (00:00Z)
+  slots: [SlotSchema],
+  status: { type: String, enum: ['SCHEDULED','RUNNING','COMPLETED','CANCELLED'], default: 'SCHEDULED', index: true },
+  holidaysFlag: { type: Boolean, default: false }
 }, { timestamps: true });
 
-const Session = mongoose.model('Session', sessionSchema);
+SessionSchema.index({ branch:1, counterId:1, serviceDate:1 }, { unique: true });
+SessionSchema.index({ branch:1, insuranceType:1, serviceDate:1 });
 
-export default Session;
+SessionSchema.pre('validate', function(next){
+  try {
+    const day = this.serviceDate.toISOString().slice(0,10); // YYYY-MM-DD
+    const ranges = this.slots.map(s => {
+      if (s.startTime >= s.endTime) throw new Error('Slot start must be before end');
+      const sameDay = s.startTime.toISOString().startsWith(day) && s.endTime.toISOString().startsWith(day);
+      if (!sameDay) throw new Error('Slots must be within serviceDate day (UTC)');
+      return [s.startTime.getTime(), s.endTime.getTime()];
+    }).sort((a,b)=>a[0]-b[0]);
+    for (let i=1;i<ranges.length;i++){
+      if (ranges[i][0] < ranges[i-1][1]) throw new Error('Overlapping slots');
+    }
+    next();
+  } catch (e) { next(e); }
+});
+
+export default model('Session', SessionSchema);
