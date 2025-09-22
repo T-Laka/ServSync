@@ -1,7 +1,8 @@
 import 'font-awesome/css/font-awesome.min.css';
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import AdminDashboard from './pages/AdminDashboard';
+import AdminDashboard from './pages/AdminDashboard.jsx';
+import ManagerDashboard from './pages/ManagerDashboard.jsx';
 
 function AppContent() {
   const location = useLocation();
@@ -10,9 +11,10 @@ function AppContent() {
 
   return (
     <>
-      {!hideNavbar && <Navbar />}
+      {/* {!hideNavbar && <Navbar />} */}
       <Routes>
         <Route path="/admin/*" element={<AdminDashboard />} />
+        <Route path="/manager/*" element={<ManagerDashboard />} />
        
       </Routes>
     </>

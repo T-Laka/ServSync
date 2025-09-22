@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import Sidebar from "../components/Admin/Sidebar";
-import TopBar from "../components/Admin/TopBar";
+import Sidebar from "../components/Manager/Sidebar";
+import TopBar from "../components/Manager/TopBar";
 import { Users, Shield, Building2, MessageSquareMore } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -23,7 +23,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 text-zinc-900 flex">
       {/* Sidebar */}
       <Sidebar
         open={open}
@@ -32,11 +32,11 @@ export default function AdminDashboard() {
         onMobileClose={() => setMobileOpen(false)}
       />
 
-      {/* Main content area */}
+      {/* Main */}
       <div className="flex-1 flex flex-col">
         <TopBar onMenuClick={() => setMobileOpen(true)} />
 
-        <main className="flex-1 p-6 bg-gray-50">
+        <main className="flex-1 py-6">
           {/* Constrained container for balance */}
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
             {/* Header */}
@@ -70,22 +70,22 @@ export default function AdminDashboard() {
               <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 xl:col-span-2">
                 <h2 className="text-lg font-semibold text-gray-800 mb-3">Quick Actions</h2>
                 <ul className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
-                  <li className="p-3 rounded-lg border border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/40 transition cursor-pointer">
+                  <li className="p-3 rounded-lg border border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/40 transition">
                     Add New User & Assign Role
                   </li>
-                  <li className="p-3 rounded-lg border border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/40 transition cursor-pointer">
+                  <li className="p-3 rounded-lg border border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/40 transition">
                     Create / Edit Role Permissions
                   </li>
-                  <li className="p-3 rounded-lg border border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/40 transition cursor-pointer">
+                  <li className="p-3 rounded-lg border border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/40 transition">
                     Manage Branch & Counters
                   </li>
-                  <li className="p-3 rounded-lg border border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/40 transition cursor-pointer">
+                  <li className="p-3 rounded-lg border border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/40 transition">
                     Review Complaints & Replies
                   </li>
-                  <li className="p-3 rounded-lg border border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/40 transition cursor-pointer">
+                  <li className="p-3 rounded-lg border border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/40 transition">
                     Configure Sessions Defaults
                   </li>
-                  <li className="p-3 rounded-lg border border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/40 transition cursor-pointer">
+                  <li className="p-3 rounded-lg border border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/40 transition">
                     System Settings
                   </li>
                 </ul>
