@@ -1,70 +1,98 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import { connectDB } from './config/db.js';  // Assuming you have the database connection logic here
+import { connectDB } from './config/db.js';
 import cors from 'cors';
 import session from 'express-session';
+import morgan from 'morgan';
+import winston from 'winston';
+import expressWinston from 'express-winston';
 
 // Import Routes
-import sessionRoutes from './routes/session.routes.js';  // Session routes
-import branchRoutes from './routes/branch.routes.js';  // Branch routes
-import insuranceTypeRoutes from './routes/insuranceType.routes.js';  // Insurance Type routes
-import userRouter from './routes/userRoutes.js';  // User management routes (friend's code)
-import roleRouter from './routes/roleRouters.js';  // Role management routes (friend's code)
+import sessionRoutes from './routes/session.routes.js';
+import branchRoutes from './routes/branch.routes.js';
+import insuranceTypeRoutes from './routes/insuranceType.routes.js';
+import userRouter from './routes/userRoutes.js';
+import roleRouter from './routes/roleRouters.js';
 
-// Load environment variables from .env file
+// Load environment variables
 dotenv.config();
 
 // Initialize Express app
 const app = express();
 
-// CORS middleware to allow cross-origin requests
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173"; // Update based on your frontend setup
-
+// CORS middleware
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
 app.use(cors({
   origin: FRONTEND_ORIGIN,
-  credentials: true // Allow credentials like cookies and session data
+  credentials: true
 }));
 
-// Middleware to parse incoming JSON requests
+// Parse JSON
 app.use(express.json());
 
-// Session management middleware
+// Session management
 app.use(session({
-  secret: process.env.SESSION_SECRET || "devsecret",  // Secret key for session
+  secret: process.env.SESSION_SECRET || "devsecret",
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === 'production', // Set this to true if using HTTPS in production
-    maxAge: 1000 * 60 * 60 // Session expiration (1 hour)
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 1000 * 60 * 60
   }
 }));
 
-// Routes
-app.use('/api/sessions', sessionRoutes);  // Session routes (for login, logout, etc.)
-app.use('/api/branches', branchRoutes);  // Branch management routes
-app.use('/api/insurance-types', insuranceTypeRoutes);  // Insurance type management
-app.use('/users', userRouter);  // User management routes (login, register)
-app.use('/roles', roleRouter);  // Role management routes (admin, user roles)
+// ============================
+// Logging Middleware
+// ============================
 
-// Basic route to check if API is running
+// Morgan for concise request logging
+app.use(morgan('dev'));
+
+// Express-Winston for structured logging
+app.use(expressWinston.logger({
+  transports: [
+    new winston.transports.Console()
+  ],
+  format: winston.format.combine(
+    winston.format.colorize(),
+    winston.format.simple()
+  ),
+  meta: true,               // log metadata about request
+  msg: "HTTP {{req.method}} {{req.url}}", // custom message
+  expressFormat: true,      // default format like :method :url :status
+  colorize: true
+}));
+
+// ============================
+// Routes
+// ============================
+app.use('/api/sessions', sessionRoutes);
+app.use('/api/branches', branchRoutes);
+app.use('/api/insurance-types', insuranceTypeRoutes);
+app.use('/users', userRouter);
+app.use('/roles', roleRouter);
+
+// Test route
 app.get("/", (req, res) => {
   res.send("ServSync API is running ✅");
 });
 
-// Connect to MongoDB and start the server
+// ============================
+// Start Server
+// ============================
 const startServer = async () => {
   try {
-    await connectDB();  // Connect to the database
+    await connectDB();
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
       console.log(`Server is running on http://localhost:${PORT}`);
     });
   } catch (err) {
     console.error('Database connection failed:', err.message);
-    process.exit(1);  // Exit the process if the database connection fails
+    process.exit(1);
   }
 };
 
-startServer();  // Start the server
+startServer();
