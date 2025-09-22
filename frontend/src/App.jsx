@@ -11,6 +11,7 @@ function AppContent() {
     <>
       {!hideNavbar && <Navbar />}
       <Routes>
+        <Route path="/admin/*" element={<AdminDashboard />} />
        
       </Routes>
     </>
