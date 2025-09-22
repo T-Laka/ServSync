@@ -1,28 +1,32 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
 import { Menu, BarChart3, MessageSquareMore, Settings } from "lucide-react";
 
 /**
  * Props:
- * - open (bool): desktop collapse state (true = wide, false = mini)
- * - mobileOpen (bool): mobile drawer state
- * - onToggle (fn): toggle for desktop collapse
- * - onMobileClose (fn): close the mobile drawer
+ * - open, mobileOpen, onToggle, onMobileClose (layout)
+ * - onSectionChange (id => void)
+ * - activeSection (string)
  */
-export default function Sidebar({ open, mobileOpen, onToggle, onMobileClose }) {
-  // Your links (add more if you want; labels show correctly now)
+export default function Sidebar({
+  open,
+  mobileOpen,
+  onToggle,
+  onMobileClose,
+  onSectionChange,
+  activeSection,
+}) {
   const navItems = [
-    { label: "Overview", to: "/admin", icon: BarChart3, end: true },
-    { label: "Staff Chat", to: "/admin/connect/chat", icon: MessageSquareMore },
-    { label: "Complaints", to: "/Manager/connect/complaints", icon: MessageSquareMore },
-    { label: "Settings", to: "/admin/settings", icon: Settings },
+    { id: "overview",  label: "Overview",   icon: BarChart3 },
+    { id: "feedback",  label: "Feedback",   icon: MessageSquareMore },
+    { id: "complaints",label: "Complaints", icon: MessageSquareMore },
+    { id: "settings",  label: "Settings",   icon: Settings },
   ];
 
-  const linkClass = ({ isActive }) =>
+  const linkClass = (id) =>
     [
-      "group flex items-center gap-3 rounded-md px-3 py-2 transition-colors",
+      "group flex items-center gap-3 rounded-md px-3 py-2 transition-colors cursor-pointer",
       "text-zinc-700 hover:bg-blue-50 hover:text-blue-700",
-      isActive ? "bg-blue-50 text-blue-700 font-medium" : "",
+      activeSection === id ? "bg-blue-50 text-blue-700 font-medium" : "",
     ].join(" ");
 
   return (
@@ -36,10 +40,9 @@ export default function Sidebar({ open, mobileOpen, onToggle, onMobileClose }) {
         aria-hidden={!mobileOpen}
       />
 
-      {/* Sidebar */}
       <aside
         role="navigation"
-        aria-label="Admin"
+        aria-label="Manager"
         className={[
           "fixed md:sticky top-0 h-full md:h-screen z-30",
           "transition-[transform,width] duration-300",
@@ -53,15 +56,12 @@ export default function Sidebar({ open, mobileOpen, onToggle, onMobileClose }) {
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-blue-600" />
-            {/* Desktop brand: show when expanded */}
             <span className={`text-xl font-bold text-blue-600 hidden md:inline ${open ? "" : "md:hidden"}`}>
               ServSync
             </span>
-            {/* Mobile brand */}
             <span className="text-xl font-bold text-blue-600 md:hidden">ServSync</span>
           </div>
 
-          {/* Desktop collapse toggle */}
           <button
             type="button"
             onClick={onToggle}
@@ -73,7 +73,6 @@ export default function Sidebar({ open, mobileOpen, onToggle, onMobileClose }) {
             <Menu className="h-5 w-5 text-zinc-700" />
           </button>
 
-          {/* Mobile close */}
           <button
             type="button"
             onClick={onMobileClose}
@@ -85,20 +84,25 @@ export default function Sidebar({ open, mobileOpen, onToggle, onMobileClose }) {
           </button>
         </div>
 
-        {/* Nav */}
+        {/* Nav (buttons, not NavLink) */}
         <nav className="mt-2 flex flex-col gap-1 px-2">
-          {navItems.map(({ label, to, icon: Icon, end }) => (
-            <NavLink key={to} to={to} end={end} className={linkClass} title={!open ? label : undefined}>
+          {navItems.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => { onSectionChange(id); onMobileClose?.(); }}
+              className={linkClass(id)}
+              title={!open ? label : undefined}
+            >
               <Icon className="h-5 w-5 shrink-0" />
-              {/* Desktop labels; hidden when collapsed */}
               <span className={`truncate hidden md:inline ${open ? "" : "md:hidden"}`}>{label}</span>
-            </NavLink>
+            </button>
           ))}
         </nav>
 
-        {/* Footer/version */}
+        {/* Footer/version (fixes earlier className bug) */}
         <div className={`mt-auto p-4 text-[11px] text-zinc-400 hidden md:block ${open ? "" : "text-center"}`}>
-          v0.1 • Admin
+          v0.1 • Manager
         </div>
       </aside>
     </>
