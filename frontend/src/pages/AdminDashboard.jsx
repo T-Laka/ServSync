@@ -1,83 +1,40 @@
-import React from 'react'
-import { useState } from "react";
-import { Menu, Search } from "lucide-react";
-
+import React, { useState } from "react";
+import Sidebar from "../components/Admin/Sidebar";
+import TopBar from "../components/Admin/TopBar";
 
 export default function AdminDashboard() {
   const [open, setOpen] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-     <div className="flex h-screen">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
+      <Sidebar
+        open={open}
+        mobileOpen={mobileOpen}
+        onToggle={() => setOpen((o) => !o)}
+        onMobileClose={() => setMobileOpen(false)}
+      />
+
+      {/* Main content area */}
       <div
-        className={`${
-          open ? "w-64" : "w-20"
-        } bg-white border-r shadow-sm transition-all duration-300`}
+        className={`flex-1 flex flex-col transition-all duration-300 md:ml-${
+          open ? "64" : "20"
+        }`}
       >
-        <div className="flex items-center justify-between p-4">
-          <h1
-            className={`text-xl font-bold text-blue-600 transition-all duration-300 ${
-              !open && "hidden"
-            }`}
-          >
-            BankDash
-          </h1>
-          <button onClick={() => setOpen(!open)}>
-            <Menu className="h-6 w-6 text-gray-600" />
-          </button>
-        </div>
+        <TopBar onMenuClick={() => setMobileOpen(true)} />
 
-        <nav className="mt-6 flex flex-col gap-3">
-          {[
-            "Dashboard",
-            "Transactions",
-            "Accounts",
-            "Investments",
-            "Credit Cards",
-            "Loans",
-            "Services",
-            "My Privileges",
-            "Setting",
-          ].map((item) => (
-            <a
-              key={item}
-              href="#"
-              className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 rounded-md"
-            >
-              <span className="h-5 w-5 bg-gray-300 rounded-sm"></span>
-              {open && <span>{item}</span>}
-            </a>
-          ))}
-        </nav>
-      </div>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col">
-        {/* Top Bar */}
-        <header className="flex items-center justify-between p-4 border-b bg-white shadow-sm">
-          <div className="relative w-1/3">
-            <Search className="absolute left-3 top-2.5 text-gray-400 h-5 w-5" />
-            <input
-              type="text"
-              placeholder="Search for something"
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+        <main className="flex-1 p-6 bg-gray-50">
+          <div className="rounded-lg bg-white border border-gray-200 shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-800">
+              Welcome to Admin Dashboard
+            </h2>
+            <p className="mt-2 text-gray-600">
+              Here you can manage appointments, queues, users, and more.
+            </p>
           </div>
-          <div className="flex items-center gap-3">
-            <img
-              src="https://randomuser.me/api/portraits/women/79.jpg"
-              alt="profile"
-              className="h-10 w-10 rounded-full object-cover"
-            />
-          </div>
-        </header>
-
-        {/* Main area (blank for now) */}
-        <main className="flex-1 bg-gray-50 p-6">
-          <h2 className="text-gray-500">Content goes here...</h2>
         </main>
       </div>
     </div>
-
-  )
+  );
 }
