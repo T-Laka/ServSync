@@ -1,6 +1,7 @@
-const express = require("express");
+import express from 'express';
+import * as ctrl from '../controllers/userControllers.js';  // Importing controller using ES Modules
+
 const router = express.Router();
-const ctrl = require("../controllers/userControllers");
 
 // Auth (user side)
 router.post("/login", ctrl.userLogin);
@@ -18,4 +19,4 @@ router.post("/", ctrl.addUsers);
 router.put("/:id", ctrl.updateUser);
 router.delete("/:id", ctrl.deleteUser);
 
-module.exports = router;
+export default router;
