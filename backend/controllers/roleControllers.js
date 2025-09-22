@@ -1,8 +1,7 @@
-// controllers/roleController.js
-const Role = require("../Model/roleModel");
+import Role from "../models/roleModel.js";  // Import the Role model
 
 // ========================
-// CRUD HANDLERS (admin side) — keyed by NIC
+// CRUD HANDLERS (Admin side)
 // ========================
 
 // GET all staff
@@ -12,31 +11,25 @@ const getAllRoles = async (req, res) => {
     if (!staff || staff.length === 0) {
       return res.status(404).json({ message: "No staff found" });
     }
-    return res.status(200).json(staff); // includes password for admin
+    return res.status(200).json(staff);
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return res.status(500).json({ message: "Server error" });
   }
 };
 
 // POST add staff
 const addRole = async (req, res) => {
-  const {
-    nic, name, userName, role, workArea,
-    password, // plain text per your requirement
-    status = "active",
-    updatedBy
-  } = req.body;
+  const { nic, name, userName, role, workArea, password, status = "active", updatedBy } = req.body;
 
   try {
     const doc = new Role({
-      nic, name, userName, role, workArea,
-      password, status, updatedBy
+      nic, name, userName, role, workArea, password, status, updatedBy
     });
     await doc.save();
     return res.status(201).json(doc);
   } catch (err) {
-    console.log(err);
+    console.error(err);
     if (err.code === 11000) {
       return res.status(409).json({ message: "Duplicate unique field (NIC or userName)" });
     }
@@ -44,28 +37,25 @@ const addRole = async (req, res) => {
   }
 };
 
-// GET staff by NIC (but call it getById)
+// GET staff by NIC
 const getById = async (req, res) => {
   try {
     const staff = await Role.findOne({ nic: req.params.id });
     if (!staff) return res.status(404).json({ message: "Staff not found" });
     return res.status(200).json(staff);
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return res.status(400).json({ message: "Invalid NIC" });
   }
 };
 
-// UPDATE staff by NIC (but call it updateRole)
+// UPDATE staff by NIC
 const updateRole = async (req, res) => {
   try {
     const staff = await Role.findOne({ nic: req.params.id });
     if (!staff) return res.status(404).json({ message: "Staff not found" });
 
-    const fields = [
-      "name", "userName", "role", "workArea",
-      "password", "status", "updatedBy"
-    ];
+    const fields = ["name", "userName", "role", "workArea", "password", "status", "updatedBy"];
     fields.forEach(f => {
       if (req.body[f] !== undefined) staff[f] = req.body[f];
     });
@@ -73,7 +63,7 @@ const updateRole = async (req, res) => {
     await staff.save();
     return res.status(200).json(staff);
   } catch (err) {
-    console.log(err);
+    console.error(err);
     if (err.code === 11000) {
       return res.status(409).json({ message: "Duplicate unique field (userName)" });
     }
@@ -81,14 +71,14 @@ const updateRole = async (req, res) => {
   }
 };
 
-// DELETE staff by NIC (but call it deleteRole)
+// DELETE staff by NIC
 const deleteRole = async (req, res) => {
   try {
     const staff = await Role.findOneAndDelete({ nic: req.params.id });
     if (!staff) return res.status(404).json({ message: "Staff not found" });
     return res.status(200).json(staff);
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return res.status(400).json({ message: "Invalid NIC" });
   }
 };
@@ -106,35 +96,33 @@ const staffLogin = async (req, res) => {
 
   try {
     const staff = await Role.findOne({ nic, role });
-    if (!staff) return res.status(401).json({ message: "Invalid credentials" });
+    if (!staff || staff.password !== password) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
 
-      if (staff.password !== password) {
-        return res.status(401).json({ message: "Invalid credentials" });
+    staff.status = "active"; // Set status to active on login
+    await staff.save();
+
+    // Save session
+    req.session.staffNic = staff.nic;
+    req.session.staffRole = staff.role;
+
+    const redirectTo = `/dashboard/${String(staff.role).toLowerCase()}`;
+
+    return res.status(200).json({
+      message: "Login successful",
+      redirectTo,
+      staff: {
+        nic: staff.nic,
+        name: staff.name,
+        userName: staff.userName,
+        role: staff.role,
+        workArea: staff.workArea,
+        status: staff.status
       }
-
-      // Set status to active on login
-      staff.status = "active";
-      await staff.save();
-
-      req.session.staffNic = staff.nic;
-      req.session.staffRole = staff.role;
-
-      const redirectTo = `/dashboard/${String(staff.role).toLowerCase()}`;
-
-      return res.status(200).json({
-        message: "Login successful",
-        redirectTo,
-        staff: {
-          nic: staff.nic,
-          name: staff.name,
-          userName: staff.userName,
-          role: staff.role,
-          workArea: staff.workArea,
-          status: staff.status
-        }
-      });
+    });
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return res.status(500).json({ message: "Server error" });
   }
 };
@@ -142,7 +130,6 @@ const staffLogin = async (req, res) => {
 // LOGOUT
 const staffLogout = async (req, res) => {
   try {
-    // Set status to inactive on logout
     if (req.session.staffNic) {
       await Role.findOneAndUpdate(
         { nic: req.session.staffNic },
@@ -150,20 +137,21 @@ const staffLogout = async (req, res) => {
         { new: true }
       );
     }
+
     delete req.session.staffNic;
     delete req.session.staffRole;
+
     return res.status(200).json({ message: "Logged out" });
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return res.status(500).json({ message: "Server error" });
   }
-}
+};
 
 // GET current staff profile
 const getMyRole = async (req, res) => {
-  if (!req.session?.staffNic) {
-    return res.status(401).json({ message: "Not logged in" });
-  }
+  if (!req.session?.staffNic) return res.status(401).json({ message: "Not logged in" });
+
   try {
     const staff = await Role.findOne({ nic: req.session.staffNic });
     if (!staff) return res.status(404).json({ message: "Staff not found" });
@@ -171,16 +159,15 @@ const getMyRole = async (req, res) => {
     const { password, ...safe } = staff.toObject();
     return res.status(200).json(safe);
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return res.status(500).json({ message: "Server error" });
   }
 };
 
 // UPDATE current staff profile
 const updateMyRole = async (req, res) => {
-  if (!req.session?.staffNic) {
-    return res.status(401).json({ message: "Not logged in" });
-  }
+  if (!req.session?.staffNic) return res.status(401).json({ message: "Not logged in" });
+
   try {
     const staff = await Role.findOne({ nic: req.session.staffNic });
     if (!staff) return res.status(404).json({ message: "Staff not found" });
@@ -194,7 +181,7 @@ const updateMyRole = async (req, res) => {
     const { password, ...safe } = saved.toObject();
     return res.status(200).json(safe);
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return res.status(400).json({ message: "Update failed" });
   }
 };
@@ -202,13 +189,15 @@ const updateMyRole = async (req, res) => {
 // ========================
 // EXPORTS
 // ========================
-exports.getAllRoles = getAllRoles;
-exports.addRole = addRole;
-exports.getById = getById;
-exports.updateRole = updateRole;
-exports.deleteRole = deleteRole;
 
-exports.staffLogin = staffLogin;
-exports.staffLogout = staffLogout;
-exports.getMyRole = getMyRole;
-exports.updateMyRole = updateMyRole;
+export {
+  getAllRoles,
+  addRole,
+  getById,
+  updateRole,
+  deleteRole,
+  staffLogin,
+  staffLogout,
+  getMyRole,
+  updateMyRole
+};

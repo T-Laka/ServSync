@@ -5,7 +5,7 @@ import cors from 'cors';
 import session from 'express-session';
 
 // Import Routes
-import sessionRoutes from './routes/session.route.js';  // Session routes
+import sessionRoutes from './routes/session.routes.js';  // Session routes
 import branchRoutes from './routes/branch.routes.js';  // Branch routes
 import insuranceTypeRoutes from './routes/insuranceType.routes.js';  // Insurance Type routes
 import userRouter from './routes/userRoutes.js';  // User management routes (friend's code)
