@@ -15,6 +15,7 @@ function AppContent() {
       <Routes>
         <Route path="/admin/*" element={<AdminDashboard />} />
         <Route path="/manager/*" element={<ManagerDashboard />} />
+        
        
       </Routes>
     </>
