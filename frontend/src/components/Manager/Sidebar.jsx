@@ -14,7 +14,7 @@ export default function Sidebar({ open, mobileOpen, onToggle, onMobileClose }) {
   const navItems = [
     { label: "Overview", to: "/admin", icon: BarChart3, end: true },
     { label: "Staff Chat", to: "/admin/connect/chat", icon: MessageSquareMore },
-    { label: "Complaints", to: "/admin/connect/complaints", icon: MessageSquareMore },
+    { label: "Complaints", to: "/Manager/connect/complaints", icon: MessageSquareMore },
     { label: "Settings", to: "/admin/settings", icon: Settings },
   ];
 
