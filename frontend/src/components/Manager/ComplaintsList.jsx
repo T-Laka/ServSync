@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 
+
 const http = axios.create({
   // baseURL: "http://localhost:5000", // uncomment if API runs separately
   withCredentials: false,
@@ -12,34 +13,38 @@ const dummyComplaints = [
   {
     _id: "1",
     referenceId: "C-1001",
-    customer: { name: "Nimal Perera" },
+    customer: { name: "Nimal Perera", email: "nimal@example.com" },
     category: "Queue Delay",
     status: "pending",
     createdAt: "2025-09-20T09:30:00Z",
+    description: "Waited over 45 minutes for the token to be called.",
   },
   {
     _id: "2",
     referenceId: "C-1002",
-    customer: { name: "Anusha Silva" },
+    customer: { name: "Anusha Silva", email: "anusha@example.com" },
     category: "Appointment Issue",
     status: "in-progress",
     createdAt: "2025-09-21T11:00:00Z",
+    description: "Wrong appointment time mentioned in SMS.",
   },
   {
     _id: "3",
     referenceId: "C-1003",
-    customer: { name: "Tharindu Jayasena" },
+    customer: { name: "Tharindu Jayasena", email: "tj@example.com" },
     category: "Service Quality",
     status: "resolved",
     createdAt: "2025-09-19T14:15:00Z",
+    description: "Staff response was not satisfactory.",
   },
   {
     _id: "4",
     referenceId: "C-1004",
-    customer: { name: "Sanduni Dissanayake" },
+    customer: { name: "Sanduni Dissanayake", email: "sd@example.com" },
     category: "Branch Facility",
     status: "escalated",
     createdAt: "2025-09-18T10:45:00Z",
+    description: "AC not working at waiting area.",
   },
 ];
 
@@ -61,17 +66,16 @@ export default function ComplaintsList() {
     try {
       const res = await http.get("/api/complaints");
       const list = normalizeToArray(res?.data);
-      if (list.length) {
-        setComplaints(list);
-      } else {
-        setComplaints(dummyComplaints); // fallback
-      }
-    } catch (e) {
-      // If API fails, use localStorage or dummy
-      const raw = localStorage.getItem("complaints");
-      const parsed = raw ? JSON.parse(raw) : [];
-      const list = normalizeToArray(parsed);
       setComplaints(list.length ? list : dummyComplaints);
+    } catch {
+      try {
+        const raw = localStorage.getItem("complaints");
+        const parsed = raw ? JSON.parse(raw) : [];
+        const list = normalizeToArray(parsed);
+        setComplaints(list.length ? list : dummyComplaints);
+      } catch {
+        setComplaints(dummyComplaints);
+      }
     } finally {
       setLoading(false);
     }
@@ -87,8 +91,7 @@ export default function ComplaintsList() {
     : base;
 
   const handleDelete = (id) => {
-    const ok = window.confirm("Are you sure you want to delete this complaint?");
-    if (!ok) return;
+    if (!window.confirm("Are you sure you want to delete this complaint?")) return;
     setComplaints((prev) => prev.filter((c) => c._id !== id));
   };
 
@@ -131,7 +134,8 @@ export default function ComplaintsList() {
               filteredComplaints.map((c) => (
                 <tr key={c._id} className="hover:bg-gray-50">
                   <td className="p-3 text-blue-600 font-medium">
-                    <Link to={`/admin/complaints/${c._id}`}>
+                    {/* Pass the entire row as state for instant render on details page */}
+                    <Link to={`/manager/complaints/${c._id}`} state={{ complaint: c }}>
                       {c.referenceId || "-"}
                     </Link>
                   </td>
