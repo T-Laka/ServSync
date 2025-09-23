@@ -5,7 +5,7 @@ import TopBar from "../components/Admin/TopBar";
 // Import your section components
 import AdminAnalytics from "../components/Admin/AdminAnalytics";
 import UserList from "../components/UserManagement/UserList";
-import SessionList from "../components/SessionManagement/sessionList";
+import SessionList from "../components/SessionManagement/SessionManager";
 //import ComplaintsList from "../components/Admin/ComplaintsList";
 
 export default function AdminDashboard() {

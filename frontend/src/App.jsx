@@ -3,6 +3,12 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import AdminDashboard from './pages/AdminDashboard.jsx';
+import AdminLayout from './layouts/AdminLayout.jsx';
+import AdminAnalytics from './components/Admin/AdminAnalytics.jsx';
+import UserList from './components/UserManagement/UserList.jsx';
+import SessionList from './components/SessionManagement/SessionManager.jsx';
+import SessionCreatePage from './components/SessionManagement/SessionCreatePage.jsx';
+//import ComplaintsList from './components/Admin/ComplaintsList.jsx';
 import ManagerDashboard from './pages/ManagerDashboard.jsx';
 import ComplaintsList from './components/Manager/ComplaintsList.jsx';
 import ComplaintDetails from './components/Manager/ComplaintDetails.jsx';
@@ -25,13 +31,20 @@ function AppContent() {
         <Route path="/support" element={<Support />} />
         <Route path="/appointments" element={<Appointments />} />
       </Route>
+      {/* Admin nested layout */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminAnalytics />} />
+          <Route path="users" element={<UserList />} />
+          <Route path="sessions" element={<SessionList />} />
+          <Route path="sessions/create" element={<SessionCreatePage />} />
+          {/* <Route path="complaints" element={<ComplaintsList />} /> */}
+        </Route>
 
       {/* Manager complaint routes */}
       <Route path="/manager/complaints/:id" element={<ComplaintDetails />} />
       <Route path="/manager/complaints" element={<ComplaintsList />} />
 
-      {/* Dashboards (no NavBar) */}
-      <Route path="/admin/*" element={<AdminDashboard />} />
+     
       <Route path="/manager/*" element={<ManagerDashboard />} />
 
       {/* Fallback */}
