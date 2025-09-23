@@ -19,6 +19,7 @@ export default function Sidebar({
     { id: "overview",  label: "Overview",   icon: BarChart3 },
     { id: "feedback",  label: "Feedback",   icon: MessageSquareMore },
     { id: "complaints",label: "Complaints", icon: MessageSquareMore },
+    { id: "claims",label: "Claims", icon: MessageSquareMore },
     { id: "settings",  label: "Settings",   icon: Settings },
   ];
 
