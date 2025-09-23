@@ -13,6 +13,11 @@ import branchRoutes from './routes/branch.routes.js';
 import insuranceTypeRoutes from './routes/insuranceType.routes.js';
 import userRouter from './routes/userRoutes.js';
 import roleRouter from './routes/roleRouters.js';
+import complaintsRoutes from './routes/complaints.routes.js';
+import feedbackRoutes from './routes/feedback.routes.js';
+import feedbackInviteRoutes from './routes/feedbackInvite.routes.js';
+
+
 
 // Load environment variables
 dotenv.config();
@@ -73,6 +78,10 @@ app.use('/api/branches', branchRoutes);
 app.use('/api/insurance-types', insuranceTypeRoutes);
 app.use('/users', userRouter);
 app.use('/roles', roleRouter);
+app.use('/api/complaints', complaintsRoutes);
+// Feedback endpoints are used by frontend at /feedback
+app.use('/feedback', feedbackRoutes);
+app.use('/api/feedback', feedbackInviteRoutes); // exposes /api/feedback/session/:id/invite and /api/feedback/submit
 
 // Test route
 app.get("/", (req, res) => {

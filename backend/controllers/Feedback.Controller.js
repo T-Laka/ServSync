@@ -1,4 +1,4 @@
-import Feedback from "../models/Feedback.js";
+import Feedback from "../models/Feedback.models.js";
 
 // Update Feedback (Admin only)
 export const updateFeedback = async (req, res) => {
