@@ -1,23 +1,23 @@
+// src/components/Admin/Sidebar.jsx
 import React from "react";
-import { Menu, BarChart3, Users, Clock, MessageSquareMore } from "lucide-react";
+import { NavLink } from "react-router-dom";
+import { Menu, BarChart3, Users, Clock /*, MessageSquareMore */ } from "lucide-react";
 
-export default function Sidebar({ open, mobileOpen, onToggle, onMobileClose, onSectionChange, activeSection }) {
+export default function Sidebar({ open, mobileOpen, onToggle, onMobileClose }) {
   const navItems = [
-    { id: "analytics", label: "Overview", icon: BarChart3 },
-    { id: "users", label: "User Management", icon: Users },
-    { id: "sessions", label: "Session Management", icon: Clock },
-    // { id: "complaints", label: "Complaints", icon: MessageSquareMore },
+    { to: "/admin", label: "Overview", icon: BarChart3, end: true },
+    { to: "/admin/users", label: "User Management", icon: Users },
+    { to: "/admin/sessions", label: "Session Management", icon: Clock },
+    // { to: "/admin/complaints", label: "Complaints", icon: MessageSquareMore },
   ];
 
-  const linkClass = id =>
-    [
-      "group flex items-center gap-3 rounded-md px-3 py-2 transition-colors cursor-pointer",
-      "text-zinc-700 hover:bg-blue-50 hover:text-blue-700",
-      activeSection === id ? "bg-blue-50 text-blue-700 font-medium" : "",
-    ].join(" ");
+  const base =
+    "group flex items-center gap-3 rounded-md px-3 py-2 transition-colors";
+  const idle = "text-zinc-700 hover:bg-blue-50 hover:text-blue-700";
 
   return (
     <>
+      {/* mobile backdrop */}
       <div
         onClick={onMobileClose}
         className={`fixed inset-0 bg-black/30 md:hidden transition-opacity ${
@@ -48,17 +48,29 @@ export default function Sidebar({ open, mobileOpen, onToggle, onMobileClose, onS
         </div>
 
         <nav className="mt-2 flex flex-col gap-1 px-2">
-          {navItems.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => { onSectionChange(id); onMobileClose?.(); }}
-              className={linkClass(id)}
-              title={!open ? label : undefined}
-            >
-              <Icon className="h-5 w-5 shrink-0" />
-              {open && <span className="truncate">{label}</span>}
-            </button>
-          ))}
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const { to, label, end } = item;
+            return (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                onClick={onMobileClose}
+                className={({ isActive }) =>
+                  [
+                    base,
+                    idle,
+                    isActive ? "bg-blue-50 text-blue-700 font-medium" : "",
+                  ].join(" ")
+                }
+                title={!open ? label : undefined}
+              >
+                <Icon className="h-5 w-5 shrink-0" />
+                {open && <span className="truncate">{label}</span>}
+              </NavLink>
+            );
+          })}
         </nav>
 
         <div className={`absolute bottom-0 left-0 right-0 p-4 text-[11px] text-zinc-400 hidden md:block ${open ? "" : "text-center"}`}>

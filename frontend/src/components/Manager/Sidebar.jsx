@@ -87,18 +87,21 @@ export default function Sidebar({
 
         {/* Nav (buttons, not NavLink) */}
         <nav className="mt-2 flex flex-col gap-1 px-2">
-          {navItems.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => { onSectionChange(id); onMobileClose?.(); }}
-              className={linkClass(id)}
-              title={!open ? label : undefined}
-            >
-              <Icon className="h-5 w-5 shrink-0" />
-              <span className={`truncate hidden md:inline ${open ? "" : "md:hidden"}`}>{label}</span>
-            </button>
-          ))}
+          {navItems.map((it) => {
+            const Icon = it.icon;
+            return (
+              <button
+                key={it.id}
+                type="button"
+                onClick={() => { onSectionChange(it.id); onMobileClose?.(); }}
+                className={linkClass(it.id)}
+                title={!open ? it.label : undefined}
+              >
+                <Icon className="h-5 w-5 shrink-0" />
+                <span className={`truncate hidden md:inline ${open ? "" : "md:hidden"}`}>{it.label}</span>
+              </button>
+            );
+          })}
         </nav>
 
         {/* Footer/version (fixes earlier className bug) */}
