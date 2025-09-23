@@ -65,21 +65,10 @@ export default function ComplaintForm({ onSubmit, onCancel }) {
       const data = await res.json();
       // Controller returns { success: true, complaint }
       const saved = data.complaint || data;
-      onSubmit?.(saved);
+        onSubmit?.(saved);
     } catch (err) {
-      // fallback: persist to localStorage and notify caller
-      const list = JSON.parse(localStorage.getItem('complaints') || '[]');
-      const fallback = {
-        id: crypto.randomUUID(),
-        ...form,
-        file: form.file ? form.file.name : null,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-      };
-      list.push(fallback);
-      localStorage.setItem('complaints', JSON.stringify(list));
-      setServerError(err.message || 'Failed to submit');
-      onSubmit?.(fallback);
+        // No local fallback: surface server error to the user
+        setServerError(err.message || 'Failed to submit complaint to server');
     } finally {
       setSubmitting(false);
     }

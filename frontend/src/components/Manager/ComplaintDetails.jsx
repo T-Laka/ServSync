@@ -19,10 +19,9 @@ export default function ComplaintDetails() {
     if (state?.complaint) return; // already have it from Link state
 
     const load = async () => {
+      setLoading(true);
+      setError("");
       try {
-        setLoading(true);
-        setError("");
-
         // 1) Try API
         const res = await fetch(`/api/complaints/${id}`);
         if (res.ok) {
@@ -34,31 +33,8 @@ export default function ComplaintDetails() {
           return;
         }
 
-        // 2) Try localStorage cache
-        const raw = localStorage.getItem("complaints");
-        if (raw) {
-          const list = JSON.parse(raw);
-          const found = (Array.isArray(list) ? list : list?.data || []).find(
-            (x) => (x._id || x.id) === id
-          );
-          if (found) {
-            setComplaint(found);
-            setResponse(found.responseNotes || "");
-            setStatus(found.status || "pending");
-            setLoading(false);
-            return;
-          }
-        }
-
-        // 3) Fallback hardcoded
-        const local = fallbackList.find((x) => x._id === id);
-        if (local) {
-          setComplaint(local);
-          setResponse(local.responseNotes || "");
-          setStatus(local.status || "pending");
-        } else {
-          setError("Complaint not found");
-        }
+        // If API returns not-ok we don't fallback to localStorage; show not found
+        setError("Complaint not found on server");
       } catch (e) {
         setError(e?.message || "Failed to load complaint");
       } finally {
@@ -75,32 +51,20 @@ export default function ComplaintDetails() {
 
     try {
       // Try API update
-      const res = await fetch(`/api/complaints/${complaint._id}/status`, {
+      const idToUse = complaint._id || complaint.id;
+      const res = await fetch(`/api/complaints/${idToUse}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ responseNotes: response, status }),
       });
 
       if (!res.ok) {
-        // If API fails, optimistically update localStorage for demo
-        const raw = localStorage.getItem("complaints");
-        let list = [];
-        try {
-          list = raw ? JSON.parse(raw) : [];
-        } catch {
-          list = [];
-        }
-        const isArray = Array.isArray(list);
-        const arr = isArray ? list : Array.isArray(list?.data) ? list.data : [];
-        const updated = arr.map((c) =>
-          (c._id || c.id) === complaint._id ? { ...c, responseNotes: response, status } : c
-        );
-        if (isArray) localStorage.setItem("complaints", JSON.stringify(updated));
-        else localStorage.setItem("complaints", JSON.stringify({ data: updated }));
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.error || `Server responded with ${res.status}`);
       }
 
       alert("Response submitted!");
-      navigate("/manager/manager/complaints");
+      navigate("/manager/complaints");
     } catch (e) {
       alert(e?.message || "Failed to submit response");
     }

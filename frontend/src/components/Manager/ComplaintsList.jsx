@@ -59,25 +59,10 @@ export default function ComplaintsList() {
     try {
       const res = await http.get("/api/complaints");
       const list = normalizeToArray(res?.data);
-      // merge with any locally saved complaints (from the form fallback)
-      const rawLocal = localStorage.getItem('complaints');
-      const localList = rawLocal ? JSON.parse(rawLocal) : [];
-      // avoid duplicates by referenceId or id
-      const combined = [...list];
-      for (const l of localList) {
-        const exists = combined.some((c) => (c._id && c._id === l._id) || (c.referenceId && c.referenceId === l.referenceId) || (l.id && c._id === l.id));
-        if (!exists) combined.push(l);
-      }
-      setComplaints(combined);
+      setComplaints(list);
     } catch (e) {
-      try {
-        const raw = localStorage.getItem('complaints');
-        const parsed = raw ? JSON.parse(raw) : [];
-        setComplaints(parsed);
-      } catch {
-        setComplaints([]);
-      }
-      setError('Using local fallback data');
+      setComplaints([]);
+      setError('Failed to load complaints from server');
     } finally {
       setLoading(false);
     }
@@ -106,15 +91,15 @@ export default function ComplaintsList() {
 
   const handleDelete = (identifier) => {
     if (!window.confirm("Are you sure you want to delete this complaint?")) return;
-    setComplaints((prev) => prev.filter((c) => (c._id || c.id) !== identifier));
-    // also remove from localStorage fallback if present
-    try {
-      const raw = localStorage.getItem('complaints');
-      if (raw) {
-        const parsed = JSON.parse(raw).filter((c) => (c.id || c._id) !== identifier);
-        localStorage.setItem('complaints', JSON.stringify(parsed));
+    // call API to delete on server, then remove from state
+    (async () => {
+      try {
+        await http.delete(`/api/complaints/${identifier}`);
+        setComplaints((prev) => prev.filter((c) => (c._id || c.id) !== identifier));
+      } catch (err) {
+        alert('Failed to delete complaint on server');
       }
-    } catch {}
+    })();
   };
 
   const Toolbar = () => (

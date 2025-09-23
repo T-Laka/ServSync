@@ -78,6 +78,8 @@ app.use('/api/branches', branchRoutes);
 app.use('/api/insurance-types', insuranceTypeRoutes);
 app.use('/users', userRouter);
 app.use('/roles', roleRouter);
+
+// Complaints endpoints are used by frontend at /support
 app.use('/api/complaints', complaintsRoutes);
 // Feedback endpoints are used by frontend at /feedback
 app.use('/feedback', feedbackRoutes);
