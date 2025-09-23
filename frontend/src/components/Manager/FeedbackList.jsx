@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import axios from "axios";
 import {
   Star,
   StarHalf,
@@ -34,64 +35,16 @@ export default function FeedbackList() {
   const [minStars, setMinStars] = useState(0);
   const [showOnlyWithReplies, setShowOnlyWithReplies] = useState(false);
 
-  // Load dummy data
+  // Load data from backend
   const fetchData = async () => {
     try {
       setLoading(true);
       setError("");
-
-      const dummy = [
-        {
-          _id: "f1",
-          username: "John Doe",
-          email: "john@example.com",
-          rating: 4,
-          message: "The queue was too long, please improve waiting times.",
-          replies: [
-            {
-              _id: "r1",
-              sender: "admin",
-              message: "Thanks for your feedback, we are working on this.",
-            },
-          ],
-          createdAt: "2025-09-21T10:00:00Z",
-        },
-        {
-          _id: "f2",
-          username: "Jane Smith",
-          email: "jane@example.com",
-          rating: 5,
-          message: "Excellent service, the staff were very helpful!",
-          replies: [],
-          createdAt: "2025-09-22T13:20:00Z",
-        },
-        {
-          _id: "f3",
-          username: "Anonymous",
-          email: "",
-          rating: 2,
-          message: "I couldn’t book an appointment online.",
-          replies: [
-            {
-              _id: "r2",
-              sender: "admin",
-              message: "We fixed the booking issue, please try again.",
-            },
-            {
-              _id: "r3",
-              sender: "user",
-              message: "Okay, I will try again. Thanks.",
-            },
-          ],
-          createdAt: "2025-09-20T08:45:00Z",
-        },
-      ];
-
-      // Simulate network
-      await new Promise((r) => setTimeout(r, 500));
-      setItems(dummy);
+      const res = await axios.get("/api/feedback");
+      // backend returns array of feedback
+      setItems(Array.isArray(res.data) ? res.data : res.data?.data || []);
     } catch (e) {
-      setError("Failed to load dummy feedback");
+      setError(e?.response?.data?.error || e?.message || "Failed to load feedback");
     } finally {
       setLoading(false);
     }
@@ -103,15 +56,23 @@ export default function FeedbackList() {
 
   // Filters
   const filtered = useMemo(() => {
-    return items
-      .filter((fb) => (minStars ? (fb.rating || 0) >= minStars : true))
-      .filter((fb) =>
-        showOnlyWithReplies ? (fb.replies?.length || 0) > 0 : true
-      )
-      .filter((fb) => {
-        const hay = `${fb.username} ${fb.email} ${fb.message}`.toLowerCase();
-        return hay.includes(q.trim().toLowerCase());
-      });
+    const needle = (q || "").trim().toLowerCase();
+    return items.filter((fb) => {
+      // rating filter: coerce to number
+      const rating = Number(fb.rating || 0);
+      if (minStars && rating < Number(minStars)) return false;
+
+      // replies filter: treat replies as array defensively
+      const replies = Array.isArray(fb.replies) ? fb.replies : [];
+      if (showOnlyWithReplies && replies.length === 0) return false;
+
+      // search across username, email, message and reply messages
+      const parts = [fb.username, fb.email, fb.message]
+        .map((p) => (p == null ? "" : String(p)))
+        .concat(replies.map((r) => (r && r.message) ? String(r.message) : ""));
+      const hay = parts.join(" ").toLowerCase();
+      return needle === "" ? true : hay.includes(needle);
+    });
   }, [items, q, minStars, showOnlyWithReplies]);
 
   // --- helpers ---
@@ -137,33 +98,34 @@ export default function FeedbackList() {
   };
 
   // Actions
-  const deleteFeedback = (id) => {
+  const deleteFeedback = async (id) => {
     if (!window.confirm("Delete this feedback?")) return;
-    setItems((s) => s.filter((fb) => fb._id !== id));
+    try {
+      await axios.delete(`/api/feedback/${id}`);
+      fetchData();
+    } catch (e) {
+      alert(e?.response?.data?.error || e?.message || "Failed to delete feedback");
+    }
   };
 
-  const addAdminReply = (feedbackId) => {
+  const addAdminReply = async (feedbackId) => {
     const msg = (replyTexts[feedbackId] || "").trim();
     if (!msg) return;
-
-    setItems((s) =>
-      s.map((fb) =>
-        fb._id === feedbackId
-          ? {
-              ...fb,
-              replies: [
-                ...fb.replies,
-                { _id: "r" + Date.now(), sender: "admin", message: msg },
-              ],
-            }
-          : fb
-      )
-    );
-    setReplyTexts((s) => ({ ...s, [feedbackId]: "" }));
+    try {
+      await axios.post(`/api/feedback/${feedbackId}/reply`, {
+        sender: "admin",
+        message: msg,
+      });
+      setReplyTexts((s) => ({ ...s, [feedbackId]: "" }));
+      fetchData();
+    } catch (e) {
+      alert(e?.response?.data?.error || e?.message || "Failed to add reply");
+    }
   };
 
   const startEditReply = (feedbackId, reply) => {
-    setEditing((s) => ({ ...s, [reply._id]: { message: reply.message || "", feedbackId } }));
+    const rid = String(reply._id || reply.id);
+    setEditing((s) => ({ ...s, [rid]: { message: reply.message || "", feedbackId } }));
   };
 
   const cancelEditReply = (replyId) => {
@@ -174,7 +136,7 @@ export default function FeedbackList() {
     });
   };
 
-  const saveEditReply = (replyId) => {
+  const saveEditReply = async (replyId) => {
     const edit = editing[replyId];
     if (!edit) return;
     const newMsg = (edit.message || "").trim();
@@ -182,28 +144,25 @@ export default function FeedbackList() {
       alert("Reply message cannot be empty");
       return;
     }
-    setItems((s) =>
-      s.map((fb) =>
-        fb._id === edit.feedbackId
-          ? {
-              ...fb,
-              replies: fb.replies.map((r) => (r._id === replyId ? { ...r, message: newMsg } : r)),
-            }
-          : fb
-      )
-    );
-    cancelEditReply(replyId);
+    try {
+      // manager is acting as admin; include override
+      await axios.put(`/api/feedback/${edit.feedbackId}/reply/${replyId}`, { message: newMsg, asAdmin: true });
+      cancelEditReply(replyId);
+      fetchData();
+    } catch (e) {
+      alert(e?.response?.data?.error || e?.message || "Failed to save reply");
+    }
   };
 
-  const deleteReply = (feedbackId, replyId) => {
+  const deleteReply = async (feedbackId, replyId) => {
     if (!window.confirm("Delete this reply?")) return;
-    setItems((s) =>
-      s.map((fb) =>
-        fb._id === feedbackId
-          ? { ...fb, replies: fb.replies.filter((r) => r._id !== replyId) }
-          : fb
-      )
-    );
+    try {
+      // axios.delete does not allow a body in some environments; pass as query param
+      await axios.delete(`/api/feedback/${feedbackId}/reply/${replyId}?asAdmin=true`);
+      fetchData();
+    } catch (e) {
+      alert(e?.response?.data?.error || e?.message || "Failed to delete reply");
+    }
   };
 
   // UI bits
@@ -347,67 +306,70 @@ export default function FeedbackList() {
             {/* replies */}
             {fb.replies?.length > 0 && (
               <div className="mt-4 space-y-2">
-                {fb.replies.map((r) => (
-                  <div key={r._id} className={`rounded-2xl p-3 border ${
-                    r.sender === "admin" ? "bg-blue-50/60 border-blue-100" : "bg-zinc-50 border-zinc-200"
-                  }`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="text-xs text-zinc-600 flex items-center gap-2">
-                        <span className={`font-medium ${r.sender === "admin" ? "text-blue-700" : "text-zinc-700"}`}>
-                          {r.sender === "admin" ? "Admin" : "User"}
-                        </span>
-                      </div>
-                      {r.sender === "admin" && !editing[r._id] && (
-                        <div className="text-xs flex gap-3">
-                          <button
-                            className="text-blue-600 hover:underline inline-flex items-center gap-1"
-                            onClick={() => startEditReply(fb._id, r)}
-                          >
-                            <Edit3 size={14} /> Edit
-                          </button>
-                          <button
-                            className="text-red-600 hover:underline inline-flex items-center gap-1"
-                            onClick={() => deleteReply(fb._id, r._id)}
-                          >
-                            <Trash2 size={14} /> Delete
-                          </button>
+                {fb.replies.map((r) => {
+                  const rid = String(r._id || r.id);
+                  return (
+                    <div key={rid} className={`rounded-2xl p-3 border ${
+                      r.sender === "admin" ? "bg-blue-50/60 border-blue-100" : "bg-zinc-50 border-zinc-200"
+                    }`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="text-xs text-zinc-600 flex items-center gap-2">
+                          <span className={`font-medium ${r.sender === "admin" ? "text-blue-700" : "text-zinc-700"}`}>
+                            {r.sender === "admin" ? "Admin" : "User"}
+                          </span>
                         </div>
+                        {r.sender === "admin" && !editing[rid] && (
+                          <div className="text-xs flex gap-3">
+                            <button
+                              className="text-blue-600 hover:underline inline-flex items-center gap-1"
+                              onClick={() => startEditReply(fb._id, r)}
+                            >
+                              <Edit3 size={14} /> Edit
+                            </button>
+                            <button
+                              className="text-red-600 hover:underline inline-flex items-center gap-1"
+                              onClick={() => deleteReply(fb._id, rid)}
+                            >
+                              <Trash2 size={14} /> Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {editing[rid] ? (
+                        <div className="space-y-2">
+                          <textarea
+                            className="w-full border rounded-xl p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            rows={2}
+                            value={editing[rid].message}
+                            onChange={(e) =>
+                              setEditing((s) => ({
+                                ...s,
+                                [rid]: { ...s[rid], message: e.target.value },
+                              }))
+                            }
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
+                              onClick={() => saveEditReply(rid)}
+                            >
+                              Save
+                            </button>
+                            <button
+                              className="px-3 py-1.5 border rounded-lg text-sm"
+                              onClick={() => cancelEditReply(rid)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-zinc-800 text-sm whitespace-pre-wrap">{r.message}</div>
                       )}
                     </div>
-
-                    {editing[r._id] ? (
-                      <div className="space-y-2">
-                        <textarea
-                          className="w-full border rounded-xl p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          rows={2}
-                          value={editing[r._id].message}
-                          onChange={(e) =>
-                            setEditing((s) => ({
-                              ...s,
-                              [r._id]: { ...s[r._id], message: e.target.value },
-                            }))
-                          }
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
-                            onClick={() => saveEditReply(r._id)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="px-3 py-1.5 border rounded-lg text-sm"
-                            onClick={() => cancelEditReply(r._id)}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-zinc-800 text-sm whitespace-pre-wrap">{r.message}</div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 

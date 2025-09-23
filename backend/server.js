@@ -81,8 +81,9 @@ app.use('/roles', roleRouter);
 
 // Complaints endpoints are used by frontend at /support
 app.use('/api/complaints', complaintsRoutes);
-// Feedback endpoints are used by frontend at /feedback
-app.use('/feedback', feedbackRoutes);
+// Feedback endpoints are used by frontend at /api/feedback
+app.use('/api/feedback', feedbackRoutes);
+// Invite and submit helpers also mounted under /api/feedback
 app.use('/api/feedback', feedbackInviteRoutes); // exposes /api/feedback/session/:id/invite and /api/feedback/submit
 
 // Test route

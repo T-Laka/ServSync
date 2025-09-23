@@ -28,5 +28,9 @@ router.post("/", async (req, res) => {
 router.put("/:id", FeedbackController.updateFeedback);
 router.delete("/:id", FeedbackController.deleteFeedback);
 router.post("/:id/reply", FeedbackController.addReply);
+// Update a reply
+router.put('/:id/reply/:replyId', FeedbackController.updateReply);
+// Delete a reply
+router.delete('/:id/reply/:replyId', FeedbackController.deleteReply);
 
 export default router;

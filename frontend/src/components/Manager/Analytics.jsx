@@ -20,8 +20,8 @@ export default function Analytics() {
         // Load complaints and feedback in parallel; fall back to local only for complaints
         const [complaintsRes, feedbackRes] = await Promise.allSettled([
             http.get("/api/complaints"),
-            // Feedback API is mounted at /feedback in backend/server.js
-            http.get("/feedback"),
+            // Feedback API is mounted at /api/feedback
+            http.get("/api/feedback"),
         ]);
 
         // Complaints metrics

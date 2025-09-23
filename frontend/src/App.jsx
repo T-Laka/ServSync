@@ -24,6 +24,7 @@ import Home from './pages/Home.jsx';
 import ContactUs from './pages/ContactUs.jsx';
 import Support from './pages/Support.jsx';
 import Appointments from './pages/Appointments.jsx';
+import FeedbackPage from './pages/FeedbackPage.jsx';
 import NotFound from './pages/NotFound.jsx';
 import PublicLayout from './layouts/UserLayout.jsx';
 
@@ -38,6 +39,7 @@ function AppContent() {
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/support" element={<Support />} />
         <Route path="/appointments" element={<Appointments />} />
+        <Route path="/feedback/new" element={<FeedbackPage />} />
       </Route>
 
 

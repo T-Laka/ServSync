@@ -78,12 +78,16 @@ export default function ComplaintsList() {
     const f1 = statusFilter
       ? base.filter((c) => (c?.status || "").toLowerCase() === statusFilter)
       : base;
+    // branch filtering: be permissive and allow substring matches (case-insensitive)
     const f2 = branchFilter
-      ? f1.filter((c) => ((c?.branch || c?.customer?.branch || "") + "").toLowerCase() === branchFilter)
+      ? f1.filter((c) => {
+          const branchVal = ((c?.branch || c?.customer?.branch || "") + "").toLowerCase();
+          return branchVal.includes(String(branchFilter).toLowerCase());
+        })
       : f1;
-    if (!q.trim()) return f1;
+    if (!q.trim()) return f2;
     const s = q.trim().toLowerCase();
-    return f1.filter((c) => {
+    return f2.filter((c) => {
       const hay = `${c.referenceId} ${c.customer?.name} ${c.customer?.email} ${c.category} ${c.status} ${c.branch || c.customer?.branch || ""} ${c.description}`.toLowerCase();
       return hay.includes(s);
     });
