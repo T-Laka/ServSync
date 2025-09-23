@@ -6,6 +6,7 @@ import TopBar from "../components/Manager/TopBar.jsx";
 import ManagerOverview from "../components/Manager/ManagerOverview.jsx";            // or your overview component
 import ComplaintsList from "../components/Manager/ComplaintsList.jsx";          // you already have this
 import FeedbackList from "../components/Manager/FeedbackList.jsx";              // optional
+import Analytics from "../components/Manager/Analytics.jsx";
 //import ManagerSettings from "./ManagerSettings.jsx";        // optional
 
 export default function ManagerDashboard() {
@@ -21,6 +22,7 @@ export default function ManagerDashboard() {
   // section -> component
   const SectionView = {
     overview: <ManagerOverview />,
+    Analytics: <Analytics/>,
     feedback: <FeedbackList />,
     complaints: <ComplaintsList />,
    // settings: <ManagerSettings />,
