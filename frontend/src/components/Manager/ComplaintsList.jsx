@@ -16,44 +16,7 @@ import {
 
 const http = axios.create({ withCredentials: false });
 
-const dummyComplaints = [
-  {
-    _id: "1",
-    referenceId: "C-1001",
-    customer: { name: "Nimal Perera", email: "nimal@example.com" },
-    category: "Queue Delay",
-    status: "pending",
-    createdAt: "2025-09-20T09:30:00Z",
-    description: "Waited over 45 minutes for the token to be called.",
-  },
-  {
-    _id: "2",
-    referenceId: "C-1002",
-    customer: { name: "Anusha Silva", email: "anusha@example.com" },
-    category: "Appointment Issue",
-    status: "in-progress",
-    createdAt: "2025-09-21T11:00:00Z",
-    description: "Wrong appointment time mentioned in SMS.",
-  },
-  {
-    _id: "3",
-    referenceId: "C-1003",
-    customer: { name: "Tharindu Jayasena", email: "tj@example.com" },
-    category: "Service Quality",
-    status: "resolved",
-    createdAt: "2025-09-19T14:15:00Z",
-    description: "Staff response was not satisfactory.",
-  },
-  {
-    _id: "4",
-    referenceId: "C-1004",
-    customer: { name: "Sanduni Dissanayake", email: "sd@example.com" },
-    category: "Branch Facility",
-    status: "escalated",
-    createdAt: "2025-09-18T10:45:00Z",
-    description: "AC not working at waiting area.",
-  },
-];
+// No hardcoded dummy complaints — show backend data and merge with any local fallback entries
 
 function normalizeToArray(payload) {
   if (Array.isArray(payload)) return payload;
@@ -85,6 +48,7 @@ function StatusPill({ value }) {
 export default function ComplaintsList() {
   const [complaints, setComplaints] = useState([]);
   const [statusFilter, setStatusFilter] = useState("");
+  const [branchFilter, setBranchFilter] = useState("");
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -95,17 +59,25 @@ export default function ComplaintsList() {
     try {
       const res = await http.get("/api/complaints");
       const list = normalizeToArray(res?.data);
-      setComplaints(list.length ? list : dummyComplaints);
+      // merge with any locally saved complaints (from the form fallback)
+      const rawLocal = localStorage.getItem('complaints');
+      const localList = rawLocal ? JSON.parse(rawLocal) : [];
+      // avoid duplicates by referenceId or id
+      const combined = [...list];
+      for (const l of localList) {
+        const exists = combined.some((c) => (c._id && c._id === l._id) || (c.referenceId && c.referenceId === l.referenceId) || (l.id && c._id === l.id));
+        if (!exists) combined.push(l);
+      }
+      setComplaints(combined);
     } catch (e) {
       try {
-        const raw = localStorage.getItem("complaints");
+        const raw = localStorage.getItem('complaints');
         const parsed = raw ? JSON.parse(raw) : [];
-        const list = normalizeToArray(parsed);
-        setComplaints(list.length ? list : dummyComplaints);
+        setComplaints(parsed);
       } catch {
-        setComplaints(dummyComplaints);
+        setComplaints([]);
       }
-      setError("Using local fallback data");
+      setError('Using local fallback data');
     } finally {
       setLoading(false);
     }
@@ -121,17 +93,28 @@ export default function ComplaintsList() {
     const f1 = statusFilter
       ? base.filter((c) => (c?.status || "").toLowerCase() === statusFilter)
       : base;
+    const f2 = branchFilter
+      ? f1.filter((c) => ((c?.branch || c?.customer?.branch || "") + "").toLowerCase() === branchFilter)
+      : f1;
     if (!q.trim()) return f1;
     const s = q.trim().toLowerCase();
     return f1.filter((c) => {
-      const hay = `${c.referenceId} ${c.customer?.name} ${c.customer?.email} ${c.category} ${c.status} ${c.description}`.toLowerCase();
+      const hay = `${c.referenceId} ${c.customer?.name} ${c.customer?.email} ${c.category} ${c.status} ${c.branch || c.customer?.branch || ""} ${c.description}`.toLowerCase();
       return hay.includes(s);
     });
-  }, [base, statusFilter, q]);
+  }, [base, statusFilter, branchFilter, q]);
 
-  const handleDelete = (id) => {
+  const handleDelete = (identifier) => {
     if (!window.confirm("Are you sure you want to delete this complaint?")) return;
-    setComplaints((prev) => prev.filter((c) => c._id !== id));
+    setComplaints((prev) => prev.filter((c) => (c._id || c.id) !== identifier));
+    // also remove from localStorage fallback if present
+    try {
+      const raw = localStorage.getItem('complaints');
+      if (raw) {
+        const parsed = JSON.parse(raw).filter((c) => (c.id || c._id) !== identifier);
+        localStorage.setItem('complaints', JSON.stringify(parsed));
+      }
+    } catch {}
   };
 
   const Toolbar = () => (
@@ -164,6 +147,21 @@ export default function ComplaintsList() {
             <option value="in-progress">In Progress</option>
             <option value="resolved">Resolved</option>
             <option value="escalated">Escalated</option>
+          </select>
+          <ChevronDown size={14} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400" />
+        </div>
+
+        <div className="relative">
+          <select
+            id="branch-filter"
+            className="appearance-none bg-white border rounded-xl px-3 py-2 pr-8 text-sm shadow-sm hover:border-zinc-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={branchFilter}
+            onChange={(e) => setBranchFilter(e.target.value)}
+          >
+            <option value="">All Branches</option>
+            <option value="colombo">Colombo</option>
+            <option value="kandy">Kandy</option>
+            <option value="galle">Galle</option>
           </select>
           <ChevronDown size={14} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400" />
         </div>
@@ -213,6 +211,7 @@ export default function ComplaintsList() {
             <tr className="text-left text-zinc-600">
               <th className="p-3 text-sm font-medium">Reference ID</th>
               <th className="p-3 text-sm font-medium">Customer</th>
+              <th className="p-3 text-sm font-medium">Branch</th>
               <th className="p-3 text-sm font-medium">Category</th>
               <th className="p-3 text-sm font-medium">Status</th>
               <th className="p-3 text-sm font-medium">Submitted</th>
@@ -222,10 +221,10 @@ export default function ComplaintsList() {
           <tbody className="divide-y divide-zinc-100">
             {filtered.length > 0 ? (
               filtered.map((c) => (
-                <tr key={c._id} className="hover:bg-zinc-50">
+                <tr key={(c._id || c.id)} className="hover:bg-zinc-50">
                   <td className="p-3 text-blue-600 font-medium">
-                    <Link to={`/manager/complaints/${c._id}`} state={{ complaint: c }}>
-                      {c.referenceId || "-"}
+                    <Link to={`/manager/complaints/${c._id || c.id}`} state={{ complaint: c }}>
+                      {c.referenceId || (c.id ? `LOCAL-${c.id.slice(0,8)}` : "-")}
                     </Link>
                   </td>
                   <td className="p-3">
@@ -234,6 +233,7 @@ export default function ComplaintsList() {
                       <span className="text-xs text-zinc-500">{c.customer?.email || ""}</span>
                     </div>
                   </td>
+                  <td className="p-3">{(c.branch || c.customer?.branch || "-")}</td>
                   <td className="p-3">{c.category || "-"}</td>
                   <td className="p-3"><StatusPill value={c.status} /></td>
                   <td className="p-3">
@@ -242,7 +242,7 @@ export default function ComplaintsList() {
                   <td className="p-3">
                     <div className="flex items-center gap-2">
                       <Link
-                        to={`/manager/complaints/${c._id}`}
+                        to={`/manager/complaints/${c._id || c.id}`}
                         state={{ complaint: c }}
                         className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border hover:bg-zinc-50"
                         title="View"
@@ -251,7 +251,7 @@ export default function ComplaintsList() {
                       </Link>
                       <button
                         className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700"
-                        onClick={() => handleDelete(c._id)}
+                        onClick={() => handleDelete(c._id || c.id)}
                         title="Delete"
                       >
                         <Trash2 size={16} /> Delete
@@ -275,9 +275,9 @@ export default function ComplaintsList() {
       {/*
       <div className="mt-6 grid gap-4 sm:hidden">
         {filtered.map((c) => (
-          <div key={c._id} className="rounded-2xl border bg-white p-4 shadow-sm">
+          <div key={(c._id || c.id)} className="rounded-2xl border bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
-              <Link to={`/manager/complaints/${c._id}`} state={{ complaint: c }} className="font-semibold text-blue-600">
+              <Link to={`/manager/complaints/${c._id || c.id}`} state={{ complaint: c }} className="font-semibold text-blue-600">
                 {c.referenceId}
               </Link>
               <StatusPill value={c.status} />

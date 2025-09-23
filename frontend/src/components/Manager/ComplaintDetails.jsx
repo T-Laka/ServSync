@@ -3,49 +3,6 @@ import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
 
 // Optional: switch fetch to axios if you prefer, but fetch keeps this file self-contained.
 
-const fallbackList = [
-  {
-    _id: "1",
-    referenceId: "C-1001",
-    customer: { name: "Nimal Perera", email: "nimal@example.com" },
-    category: "Queue Delay",
-    status: "pending",
-    createdAt: "2025-09-20T09:30:00Z",
-    description: "Waited over 45 minutes for the token to be called.",
-    responseNotes: "",
-  },
-  {
-    _id: "2",
-    referenceId: "C-1002",
-    customer: { name: "Anusha Silva", email: "anusha@example.com" },
-    category: "Appointment Issue",
-    status: "in-progress",
-    createdAt: "2025-09-21T11:00:00Z",
-    description: "Wrong appointment time mentioned in SMS.",
-    responseNotes: "We are reviewing the SMS gateway logs.",
-  },
-  {
-    _id: "3",
-    referenceId: "C-1003",
-    customer: { name: "Tharindu Jayasena", email: "tj@example.com" },
-    category: "Service Quality",
-    status: "resolved",
-    createdAt: "2025-09-19T14:15:00Z",
-    description: "Staff response was not satisfactory.",
-    responseNotes: "Addressed with branch manager.",
-  },
-  {
-    _id: "4",
-    referenceId: "C-1004",
-    customer: { name: "Sanduni Dissanayake", email: "sd@example.com" },
-    category: "Branch Facility",
-    status: "escalated",
-    createdAt: "2025-09-18T10:45:00Z",
-    description: "AC not working at waiting area.",
-    responseNotes: "Escalated to facilities team.",
-  },
-];
-
 export default function ComplaintDetails() {
   // Route is defined as /manager/complaints/:id
   const { id } = useParams();
@@ -143,7 +100,7 @@ export default function ComplaintDetails() {
       }
 
       alert("Response submitted!");
-      navigate("/manager/complaints");
+      navigate("/manager/manager/complaints");
     } catch (e) {
       alert(e?.message || "Failed to submit response");
     }
