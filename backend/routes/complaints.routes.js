@@ -1,5 +1,7 @@
 import { Router } from 'express';
-import * as ComplaintController from '../controllers/ComplaintController.js';
+import * as ComplaintController from '../controllers/Complaint.Controller.js';
+import Complaint from '../models/Complaint.model.js'; // <- add this
+
 
 const router = Router();
 
