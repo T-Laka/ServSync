@@ -12,7 +12,7 @@ export default function Home() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <a href="/appointments" className="rounded-2xl bg-white dark:bg-slate-800 p-5 shadow-sm hover:shadow transition">
+        <a href="/book" className="rounded-2xl bg-white dark:bg-slate-800 p-5 shadow-sm hover:shadow transition">
           <h3 className="text-lg font-medium text-slate-800 dark:text-slate-100">Make an Appointment</h3>
           <p className="text-sm mt-1 text-slate-600 dark:text-slate-300">
             Choose branch, insurance type, and time slot.

@@ -25,6 +25,11 @@ dotenv.config();
 // Initialize Express app
 const app = express();
 
+// Temporary mock authentication - Simulating an authenticated user for now
+const mockAuthentication = (req, res, next) => {
+  req.user = { id: "admin", role: "admin" };  // Placeholder for an authenticated user
+  next();
+};
 // CORS middleware
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
 app.use(cors({
@@ -73,7 +78,8 @@ app.use(expressWinston.logger({
 // ============================
 // Routes
 // ============================
-app.use('/api/sessions', sessionRoutes);
+app.use('/api/sessions', mockAuthentication, sessionRoutes);
+
 app.use('/api/branches', branchRoutes);
 app.use('/api/insurance-types', insuranceTypeRoutes);
 app.use('/users', userRouter);
