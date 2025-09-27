@@ -1,5 +1,5 @@
 // src/controllers/session.controller.js
-import { createSessionService, listSessionsService, updateSessionService } from '../services/session.service.js';
+import { createSessionService, listSessionsService } from '../services/session.service.js';
 
 export const createSession = async (req,res,next)=>{
   try{
@@ -14,12 +14,4 @@ export const listSessions = async (req,res,next)=>{
     const list = await listSessionsService({ branchId, date });
     res.json(list);
   }catch(e){ next(e); }
-};
-
-export const updateSession = async (req, res, next) => {
-  try {
-    const { sessionId } = req.params;
-    const doc = await updateSessionService(sessionId, req.body);
-    res.json(doc);
-  } catch (e) { next(e); }
 };
