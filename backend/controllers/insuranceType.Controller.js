@@ -1,5 +1,5 @@
 // src/controllers/insuranceType.controller.js
-import InsuranceType from '../models/insuranceType.model.js';
+import InsuranceType from '../models/InsuranceType.model.js ';
 
 export const createInsuranceType = async (req, res, next) => {
   try {

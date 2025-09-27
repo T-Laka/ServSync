@@ -40,6 +40,4 @@ SessionSchema.pre('validate', function(next){
   } catch (e) { next(e); }
 });
 
-// Avoid OverwriteModelError when using nodemon/hot reload
-const Session = mongoose.models?.Session || model('Session', SessionSchema);
-export default Session;
+export default model('Session', SessionSchema);
