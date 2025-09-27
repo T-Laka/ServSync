@@ -122,7 +122,7 @@ export default function UserHome() {
                     View Queue
                   </Link>
                   <Link
-                    to="/appointments"
+                    to="/book"
                     className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-center text-sm font-semibold hover:bg-slate-50"
                   >
                     My Appointments

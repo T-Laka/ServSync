@@ -23,10 +23,14 @@ import ComplaintDetails from "./components/Manager/ComplaintDetails";
 import Home from './pages/Home.jsx';
 import ContactUs from './pages/ContactUs.jsx';
 import Support from './pages/Support.jsx';
-import Appointments from './pages/Appointments.jsx';
 import FeedbackPage from './pages/FeedbackPage.jsx';
 import NotFound from './pages/NotFound.jsx';
 import PublicLayout from './layouts/UserLayout.jsx';
+// booking flow pages
+import InsuranceSelect from './pages/book/InsuranceSelect.jsx';
+import BranchSelect from './pages/book/BranchSelect.jsx';
+import Schedule from './pages/book/Schedule.jsx';
+import Confirm from './pages/book/Confirm.jsx';
 
 
 
@@ -38,8 +42,13 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/support" element={<Support />} />
-        <Route path="/appointments" element={<Appointments />} />
+  {/* legacy appointments removed — use /book flow */}
         <Route path="/feedback/new" element={<FeedbackPage />} />
+        {/* Booking flow */}
+        <Route path="/book" element={<InsuranceSelect />} />
+        <Route path="/book/:insuranceType" element={<BranchSelect />} />
+        <Route path="/book/:insuranceType/:branchId" element={<Schedule />} />
+        <Route path="/book/:insuranceType/:branchId/confirm" element={<Confirm />} />
       </Route>
 
 

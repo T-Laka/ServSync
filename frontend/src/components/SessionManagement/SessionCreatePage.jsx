@@ -5,38 +5,24 @@ import { CalendarDays, Clock, Plus, Trash2, Settings2, ChevronRight, Check, Aler
  * - Base: white cards, gray borders, dark text
  * - Primary: blue-600
  */
+/**
+* SessionCreatePage — Frontend-only (React + Tailwind)
+* ----------------------------------------------------
+* - Dummy data for Branches (with Counters) & Insurance Types
+* - Step 1: Basics (branch, counter, insuranceType, serviceDate — future only)
+* - Step 2: Slot Template (45m slot + 15m break, lunch 12–13) with Generate button
+* - Step 3: Grid (checkbox include, editable start/end, capacity, add custom)
+* - Validations: future date, within day, start<end, non-overlap, capacity>=1
+* - Submit: logs payload shaped for the provided Session.model.js
+*
+* Usage:
+* import SessionCreatePage from "./SessionCreatePage";
+* <Route path="/admin/sessions/create" element={<SessionCreatePage />} />
+*/
 
-const INSURANCE_TYPES = [
-  { _id: "it-1", name: "Life" },
-  { _id: "it-2", name: "Motor" },
-  { _id: "it-3", name: "Health" },
-];
-
-const BRANCHES = [
-  {
-    _id: "br-1",
-    branchName: "Colombo HQ",
-    counters: [
-      { _id: "c-1", label: "Counter 1 (Motor)", insuranceType: "it-2" },
-      { _id: "c-2", label: "Counter 2 (Health)", insuranceType: "it-3" },
-    ],
-  },
-  {
-    _id: "br-2",
-    branchName: "Kandy",
-    counters: [
-      { _id: "c-3", label: "Counter A (Life)", insuranceType: "it-1" },
-      { _id: "c-4", label: "Counter B (Motor)", insuranceType: "it-2" },
-    ],
-  },
-  {
-    _id: "br-3",
-    branchName: "Galle",
-    counters: [
-      { _id: "c-5", label: "Counter X (Life)", insuranceType: "it-1" },
-    ],
-  },
-];
+// Branch and InsuranceType lists are fetched from backend (/api/*) on mount.
+// The backend returns Branch objects with fields: _id, name, code, address, counters[]
+// and InsuranceType objects with: _id, name, description
 
 const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 
@@ -49,10 +35,14 @@ function toYMD(date) {
 
 function addMinutes(date, minutes) { return new Date(date.getTime() + minutes * 60000); }
 function localDateTimeToUTC(dateStr, timeStr) {
+  // Create a Date using local clock values and return its ISO (UTC) representation.
+  // Previously this function attempted to manually apply timezoneOffset and
+  // ended up double-shifting times. Using toISOString() on the Date constructed
+  // from local values yields the correct UTC instant for that local wall time.
   const [y, m, d] = dateStr.split("-").map(Number);
   const [hh, mm] = timeStr.split(":").map(Number);
   const local = new Date(y, m - 1, d, hh, mm, 0, 0);
-  return new Date(local.getTime() - local.getTimezoneOffset() * 60000).toISOString();
+  return local.toISOString();
 }
 function localOn(dateStr, timeStr) {
   const [y, m, d] = dateStr.split("-").map(Number);
@@ -81,6 +71,12 @@ function generateTemplateSlots({ dateStr, start = "09:15", end = "16:00", slotLe
 }
 
 export default function SessionCreatePage() {
+  // fetched lists
+  const [branches, setBranches] = useState([]);
+  const [insuranceTypes, setInsuranceTypes] = useState([]);
+  const [loadingBranches, setLoadingBranches] = useState(false);
+  const [loadingInsuranceTypes, setLoadingInsuranceTypes] = useState(false);
+
   const [branchId, setBranchId] = useState("");
   const [counterId, setCounterId] = useState("");
   const [insuranceTypeId, setInsuranceTypeId] = useState("");
@@ -100,9 +96,26 @@ export default function SessionCreatePage() {
   const [errors, setErrors] = useState([]);
 
   const counters = useMemo(() => {
-    const b = BRANCHES.find(b => b._id === branchId);
-    return b ? b.counters : [];
-  }, [branchId]);
+    const b = branches.find(b => b._id === branchId);
+    return b ? (b.counters || []) : [];
+  }, [branchId, branches]);
+
+  // fetch branches and insurance types from backend
+  useEffect(() => {
+    setLoadingBranches(true);
+    fetch('/api/branches')
+      .then(res => { if (!res.ok) throw new Error(`Failed to fetch branches (${res.status})`); return res.json(); })
+      .then(data => setBranches(data))
+      .catch(err => { console.error('Failed to fetch branches', err); setErrors(prev => prev.concat([`Branches fetch: ${err.message}`])); })
+      .finally(() => setLoadingBranches(false));
+
+    setLoadingInsuranceTypes(true);
+    fetch('/api/insurance-types')
+      .then(res => { if (!res.ok) throw new Error(`Failed to fetch insurance types (${res.status})`); return res.json(); })
+      .then(data => setInsuranceTypes(data))
+      .catch(err => { console.error('Failed to fetch insurance types', err); setErrors(prev => prev.concat([`Insurance types fetch: ${err.message}`])); })
+      .finally(() => setLoadingInsuranceTypes(false));
+  }, []);
 
   useEffect(() => {
     const c = counters.find(c => c._id === counterId);
@@ -149,18 +162,41 @@ export default function SessionCreatePage() {
   function handleSubmit(e) {
     e.preventDefault(); if (!validate()) return;
     const picked = rows.filter(r => r.checked);
-    const dayISO = localDateTimeToUTC(serviceDate, "00:00");
+    // Send serviceDate as YYYY-MM-DD (server will normalize to UTC midnight).
     const payload = {
-      branch: branchId,
+      branchId: branchId,
       counterId,
-      insuranceType: insuranceTypeId,
-      serviceDate: dayISO,
+      insuranceTypeId: insuranceTypeId,
+      serviceDate: serviceDate,
       slots: picked.map(r => ({ startTime: localDateTimeToUTC(serviceDate, r.startHM), endTime: localDateTimeToUTC(serviceDate, r.endHM), capacity: Number(r.capacity)||1, booked:0, overbook:0 })),
       status: "SCHEDULED",
       holidaysFlag: false,
     };
-    console.log("SESSION CREATE PAYLOAD", payload);
-    alert("Check console for payload. Ready to POST to /api/sessions");
+    // POST payload to backend. Vite dev server proxies /api to backend per vite.config.js
+    fetch('/api/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(async res => {
+        const body = await res.json().catch(() => null);
+        if (!res.ok) {
+          const msg = body?.message || body || `Server returned ${res.status}`;
+          throw new Error(msg);
+        }
+        return body;
+      })
+      .then(created => {
+        // success
+        setRows([]);
+        setErrors([]);
+        alert('Session created successfully');
+        console.log('Created session:', created);
+      })
+      .catch(err => {
+        console.error('Create session failed', err);
+        setErrors([err.message || 'Failed to create session']);
+      });
   }
 
   return (
@@ -203,7 +239,7 @@ export default function SessionCreatePage() {
                 <label className="text-sm text-gray-600">Branch</label>
                 <select value={branchId} onChange={e => { setBranchId(e.target.value); setCounterId(""); }} className="mt-1 w-full rounded-xl bg-white border border-gray-300 p-2">
                   <option value="">Select branch</option>
-                  {BRANCHES.map(b => <option key={b._id} value={b._id}>{b.branchName}</option>)}
+                  {loadingBranches ? <option disabled>Loading...</option> : branches.map(b => <option key={b._id} value={b._id}>{b.name || b.branchName || b.code}</option>)}
                 </select>
               </div>
 
@@ -211,7 +247,7 @@ export default function SessionCreatePage() {
                 <label className="text-sm text-gray-600">Counter</label>
                 <select value={counterId} onChange={e => setCounterId(e.target.value)} disabled={!branchId} className="mt-1 w-full rounded-xl bg-white border border-gray-300 p-2 disabled:opacity-50">
                   <option value="">{branchId ? "Select counter" : "Pick branch first"}</option>
-                  {counters.map(c => <option key={c._id} value={c._id}>{c.label}</option>)}
+                  {counters.map(c => <option key={c._id} value={c._id}>{c.name || c.label}</option>)}
                 </select>
               </div>
 
@@ -219,7 +255,7 @@ export default function SessionCreatePage() {
                 <label className="text-sm text-gray-600">Insurance Type</label>
                 <select value={insuranceTypeId} onChange={e => setInsuranceTypeId(e.target.value)} className="mt-1 w-full rounded-xl bg-white border border-gray-300 p-2">
                   <option value="">Select type</option>
-                  {INSURANCE_TYPES.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
+                  {loadingInsuranceTypes ? <option disabled>Loading...</option> : insuranceTypes.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
                 </select>
               </div>
 

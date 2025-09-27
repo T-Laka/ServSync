@@ -4,12 +4,14 @@ import NavBar from "../components/User/NavBar.jsx";
 
 export default function UserLayout() {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen flex flex-col bg-white text-slate-900">
       <NavBar />
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
-        <Outlet />
+      <main className="flex-1 w-full">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+          <Outlet />
+        </div>
       </main>
-      <footer className="border-t border-slate-200/70 dark:border-slate-700/60 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+      <footer className="mt-auto border-t border-slate-200 py-6 text-center text-sm text-slate-500">
         © {new Date().getFullYear()} ServSync — NITF Smart Appointment & Queue System
       </footer>
     </div>
