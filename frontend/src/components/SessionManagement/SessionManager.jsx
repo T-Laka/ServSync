@@ -1,7 +1,8 @@
 // src/components/SessionManagement/SessionManager.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, ChevronRight, Search, Filter, Plus, RotateCcw } from "lucide-react";
+import { Calendar, ChevronRight, Search, Filter, Plus, RotateCcw, Edit } from "lucide-react";
+import SessionEditModal from './SessionEditModal';
 
 /* helpers */
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -47,6 +48,7 @@ export default function SessionManager() {
   const [insuranceTypes, setInsuranceTypes] = useState([]);
   const [open, setOpen] = useState({});
   const [cache, setCache] = useState({});
+  const [editingSession, setEditingSession] = useState(null);
   const [branchQuery, setBranchQuery] = useState("");
   const [insFilter, setInsFilter] = useState("");
 
@@ -253,30 +255,37 @@ export default function SessionManager() {
                           const insName = insById[insId] || insId || "Unknown";
                           const merged = mergeSlots(list);
                           return (
-                            <div
-                              key={insId}
-                              className="rounded-xl ring-1 ring-zinc-900/5 bg-white/70 p-3"
-                            >
+                            <div key={insId} className="rounded-xl ring-1 ring-zinc-900/5 bg-white/70 p-3">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="font-medium text-zinc-900">{insName}</div>
                                 <div className="text-xs text-zinc-500">{list.length} session(s)</div>
                               </div>
+
+                              {/* show per-session rows with edit buttons */}
+                              <div className="space-y-2">
+                                {list.map(sess => (
+                                  <div key={sess._id} className="p-2 rounded-md border flex items-center justify-between">
+                                    <div>
+                                      <div className="font-medium">Counter: {sess.counterId}</div>
+                                      <div className="text-xs text-zinc-500">Slots: {(sess.slots||[]).length} • Status: {sess.status} • Holiday: {sess.holidaysFlag ? 'Yes' : 'No'}</div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <button onClick={()=>setEditingSession(sess)} className="px-2 py-1 rounded bg-white border inline-flex items-center gap-2 text-sm"><Edit className="w-4 h-4"/> Edit</button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* also show merged slots as overview */}
                               {merged.length === 0 ? (
-                                <div className="text-sm text-zinc-500">No slots.</div>
+                                <div className="text-sm text-zinc-500 mt-2">No slots.</div>
                               ) : (
-                                <div className="overflow-x-auto">
+                                <div className="overflow-x-auto mt-2">
                                   <div className="flex gap-3 py-1">
                                     {merged.map((sl, idx) => (
-                                      <div
-                                        key={idx}
-                                        className="min-w-[160px] p-3 rounded-lg bg-white/80 ring-1 ring-zinc-900/5 shadow-sm hover:shadow-md transition-shadow"
-                                      >
-                                        <div className="text-sm font-medium text-zinc-900">
-                                          {fmtHMLocal(sl.startTime)} – {fmtHMLocal(sl.endTime)}
-                                        </div>
-                                        <div className="text-[11px] uppercase tracking-wide text-zinc-500">
-                                          Booked / Capacity
-                                        </div>
+                                      <div key={idx} className="min-w-[160px] p-3 rounded-lg bg-white/80 ring-1 ring-zinc-900/5 shadow-sm hover:shadow-md transition-shadow">
+                                        <div className="text-sm font-medium text-zinc-900">{fmtHMLocal(sl.startTime)} – {fmtHMLocal(sl.endTime)}</div>
+                                        <div className="text-[11px] uppercase tracking-wide text-zinc-500">Booked / Capacity</div>
                                         <div className="mt-1 font-semibold">{sl.booked} / {sl.capacity}</div>
                                       </div>
                                     ))}
@@ -295,6 +304,30 @@ export default function SessionManager() {
           );
         })}
       </div>
+      {/* Edit modal */}
+      {editingSession && (
+        <SessionEditModal
+          session={editingSession}
+          onClose={() => setEditingSession(null)}
+          onSaved={(updated) => {
+            // update cache where this session lives
+            setCache(prev => {
+              const copy = { ...prev };
+              for (const bid of Object.keys(copy)) {
+                const cs = copy[bid].sessions || [];
+                const idx = cs.findIndex(s => String(s._id) === String(updated._id));
+                if (idx !== -1) {
+                  cs[idx] = updated;
+                  copy[bid] = { ...copy[bid], sessions: cs };
+                }
+              }
+              return copy;
+            });
+          }}
+        />
+      )}
     </div>
   );
 }
+
+// place modal render at bottom of file (outside main return is fine but inside module)

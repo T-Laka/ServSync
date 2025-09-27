@@ -91,3 +91,31 @@ export async function listSessionsService({ branchId, date }) {
   const day = new Date(`${date}T00:00:00.000Z`);
   return Session.find({ branch: branchId, serviceDate: day }).lean();
 }
+
+export async function updateSessionService(sessionId, updates) {
+  if (!sessionId) throw new Error('sessionId required');
+  const session = await Session.findById(sessionId);
+  if (!session) throw new Error('Session not found');
+
+  // If updates contain slots, sanitize similar to create
+  if (updates.slots) {
+    if (!Array.isArray(updates.slots)) throw new Error('slots must be an array');
+    const svcDay = session.serviceDate.toISOString().slice(0,10);
+    const normalized = updates.slots.map((s, idx) => {
+      const start = s.startTime instanceof Date ? s.startTime : new Date(String(s.startTime));
+      const end = s.endTime instanceof Date ? s.endTime : new Date(String(s.endTime));
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) throw new Error(`Invalid start/end in slot ${idx+1}`);
+      if (start >= end) throw new Error(`Slot ${idx+1}: start must be before end`);
+      if (!start.toISOString().startsWith(svcDay) || !end.toISOString().startsWith(svcDay)) throw new Error(`Slot ${idx+1}: times must be within serviceDate (UTC)`);
+      return { startTime: start, endTime: end, capacity: Number(s.capacity || 1), booked: Number(s.booked || 0), overbook: Number(s.overbook || 0) };
+    });
+    session.slots = normalized;
+  }
+
+  if (typeof updates.holidaysFlag !== 'undefined') session.holidaysFlag = !!updates.holidaysFlag;
+  if (typeof updates.status !== 'undefined') session.status = updates.status;
+
+  // Save and return updated document
+  await session.save();
+  return session.toObject();
+}
