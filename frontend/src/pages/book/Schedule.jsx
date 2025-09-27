@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, AlertCircle, MapPin } from 'lucide-react';
+import SlotCarousel from '../../components/Book/SlotCarousel';
 
 const pad2 = (n)=>String(n).padStart(2,'0');
 const toYMD = (d)=>`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
@@ -117,74 +118,71 @@ export default function Schedule(){
   const otherBranches = branches.filter(b => b._id !== branchId).slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-gray-50 -m-8 lg:-m-12">
+    <div className="min-h-screen bg-gray-50 -m-6 lg:-m-8">
       {/* Mobile: Show main content only, hide sidebar on small screens */}
-      <div className="lg:hidden flex flex-col">
+      <div className="lg:hidden flex flex-col min-h-screen">
         {/* Mobile Header */}
-        <div className="bg-white border-b border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold">{currentBranch?.name || 'Branch Schedule'}</h2>
-              <p className="text-sm text-gray-600">{currentBranch?.address}</p>
+        <div className="bg-white border-b border-gray-200 p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                <div className="w-6 h-6 bg-white rounded-lg flex items-center justify-center">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                </div>
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-gray-900">{currentBranch?.name || 'Branch Schedule'}</h2>
+                <p className="text-xs text-gray-600">{currentBranch?.address}</p>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => navigateWeek(-1)} className="p-2 hover:bg-gray-100 rounded-lg">
+            <div className="flex items-center gap-1">
+              <button onClick={() => navigateWeek(-1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <button onClick={() => navigateWeek(1)} className="p-2 hover:bg-gray-100 rounded-lg">
+              <button onClick={() => navigateWeek(1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
           </div>
+          
+          {/* Mobile Month Display */}
+          <div className="text-center">
+            <h3 className="text-sm font-semibold text-gray-700">
+              {new Date(startDate).toLocaleDateString(undefined, {month:'long', year:'numeric'})}
+            </h3>
+          </div>
         </div>
 
         {/* Mobile Day Rows */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
           {loading && <div className="text-center py-8 text-gray-500">Loading sessions...</div>}
           {error && <div className="text-center py-8 text-red-600">{error}</div>}
           
-          <div className="space-y-4">
+          <div className="space-y-4 max-w-sm mx-auto">
             {weekDays.map(dayDate => {
               const sessions = sessionsByDate[dayDate] || [];
               const allSlots = sessions.flatMap(s => s.slots || []);
-              const totalSessions = sessions.length;
               
               return (
-                <div key={dayDate} className="bg-white rounded-lg border border-gray-200">
-                  <div className="flex items-center justify-between p-3 border-b border-gray-100">
+                <div key={dayDate} className="bg-white rounded-2xl border border-gray-200 shadow-lg">
+                  <div className="flex items-center justify-between p-4 border-b border-gray-100">
                     <div>
-                      <h3 className="font-medium text-gray-900 text-sm">
+                      <h3 className="font-semibold text-gray-900 text-base">
                         {new Date(dayDate).toLocaleDateString(undefined, {
-                          weekday: 'short',
+                          weekday: 'long',
                           day: '2-digit',
                           month: 'short'
                         })}
                       </h3>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {totalSessions} sessions
-                    </div>
                   </div>
                   
-                  <div className="p-3">
-                    {allSlots.length === 0 ? (
-                      <div className="text-center py-4 text-gray-500 text-sm">
-                        No sessions available
-                      </div>
-                    ) : (
-                      <div className="flex gap-2 overflow-x-auto pb-2">
-                        {allSlots.map((slot, idx) => {
-                          const session = sessions.find(s => s.slots?.includes(slot));
-                          return (
-                            <SlotCard 
-                              key={`${session?._id}-${idx}`} 
-                              slot={slot} 
-                              onClick={() => onSelectSlot(session, slot)} 
-                            />
-                          );
-                        })}
-                      </div>
-                    )}
+                  <div className="p-4">
+                    <SlotCarousel 
+                      allSlots={allSlots}
+                      sessions={sessions}
+                      onSelectSlot={onSelectSlot}
+                    />
                   </div>
                 </div>
               );
@@ -194,51 +192,49 @@ export default function Schedule(){
       </div>
 
       {/* Desktop: Sidebar + Main Content */}
-      <div className="hidden lg:flex">
+      <div className="hidden lg:flex min-h-screen">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm">
-        {/* Branch Info */}
-        <div className="p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
-              </div>
-            </div>
-            <div>
-              <h1 className="font-semibold text-gray-900 text-sm">
-                {currentBranch?.name || currentBranch?.branchName || 'ServSync Branch'}
-              </h1>
-              <p className="text-gray-600 text-xs">{currentBranch?.address || 'Loading...'}</p>
+      <div className="w-[420px] xl:w-[520px] bg-white border-r border-gray-200 flex flex-col shadow-lg">
+        {/* Branch Info - stacked so name/address use one line */}
+        <div className="p-8 text-center">
+          <div className="mx-auto w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl flex items-center justify-center shadow-sm">
+            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center">
+              <div className="w-8 h-8 bg-blue-500 rounded-full"></div>
             </div>
           </div>
-          <button className="text-blue-600 text-xs hover:underline">Terms and Conditions</button>
+          <div className="mt-4">
+            <h1 className="font-bold text-gray-900 text-lg leading-tight truncate whitespace-nowrap">
+              {currentBranch?.name || currentBranch?.branchName || 'ServSync Branch'}
+            </h1>
+            <p className="text-gray-600 text-sm mt-1 truncate whitespace-nowrap">{currentBranch?.address || 'Loading...'}</p>
+          </div>
+          <div className="mt-4">
+            <button className="text-blue-600 text-sm hover:underline font-semibold transition-colors hover:text-blue-700">
+              Terms and Conditions
+            </button>
+          </div>
         </div>
 
-        {/* Special Note */}
-        <div className="mx-4 mb-4">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
-              <div>
-                <h3 className="font-medium text-red-800 mb-2 text-sm">Special note</h3>
-                <p className="text-red-700 text-xs leading-relaxed">
-                  Please arrive 15 minutes before your appointment time. Bring valid identification and any required documents. Appointments can be rescheduled up to 2 hours before the scheduled time.
-                </p>
-              </div>
-            </div>
+        {/* Special Note - icon on top, wider text area */}
+        <div className="mb-8 px-6">
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 shadow-none min-h-[170px] flex flex-col items-center text-center">
+            <AlertCircle className="w-8 h-8 text-red-500 mb-3" />
+            <h3 className="font-bold text-red-800 mb-2 text-lg">Special note</h3>
+            <p className="text-red-700 text-sm leading-relaxed max-w-[260px]">
+              Please arrive 15 minutes before your appointment time. Bring valid identification and any required documents. Appointments can be rescheduled up to 2 hours before the scheduled time.
+            </p>
           </div>
         </div>
 
         {/* Also Available */}
-        <div className="flex-1 px-4 pb-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <h3 className="font-medium text-blue-800 mb-2 text-sm">Also available at</h3>
-            <div className="space-y-1">
+        <div className="flex-1 px-8 pb-8">
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 shadow-sm">
+            <h3 className="font-bold text-blue-800 mb-4 text-lg">Also available at</h3>
+            <div className="space-y-3">
               {otherBranches.map(branch => (
-                <div key={branch._id} className="flex items-center gap-2 text-xs text-blue-700">
-                  <MapPin className="w-3 h-3" />
-                  <span>{branch.name || branch.branchName}</span>
+                <div key={branch._id} className="flex items-center gap-3 text-sm text-blue-700 hover:text-blue-800 transition-colors cursor-pointer p-2 rounded-lg hover:bg-blue-100">
+                  <MapPin className="w-4 h-4" />
+                  <span className="font-medium">{branch.name || branch.branchName}</span>
                 </div>
               ))}
             </div>
@@ -295,21 +291,20 @@ export default function Schedule(){
         </div>
 
         {/* Day Rows */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
           {loading && <div className="text-center py-8 text-gray-500">Loading sessions...</div>}
           {error && <div className="text-center py-8 text-red-600">{error}</div>}
-          
-          <div className="max-w-5xl mx-auto space-y-4">
+
+          <div className="max-w-6xl mx-auto space-y-4">
             {weekDays.map(dayDate => {
               const sessions = sessionsByDate[dayDate] || [];
               const allSlots = sessions.flatMap(s => s.slots || []);
-              const totalSessions = sessions.length;
-              
+
               return (
-                <div key={dayDate} className="bg-white rounded-lg border border-gray-200 shadow-sm">
-                  <div className="flex items-center justify-between p-3 border-b border-gray-100">
+                <div key={dayDate} className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
+                  <div className="flex items-center justify-between p-4 border-b border-gray-100">
                     <div>
-                      <h3 className="font-medium text-gray-900 text-sm">
+                      <h3 className="font-semibold text-gray-900 text-base">
                         {new Date(dayDate).toLocaleDateString(undefined, {
                           weekday: 'long',
                           day: '2-digit',
@@ -318,30 +313,14 @@ export default function Schedule(){
                         })}
                       </h3>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {totalSessions} sessions available
-                    </div>
                   </div>
-                  
-                  <div className="p-3">
-                    {allSlots.length === 0 ? (
-                      <div className="text-center py-6 text-gray-500 text-sm">
-                        No sessions available for this date
-                      </div>
-                    ) : (
-                      <div className="flex gap-2 flex-wrap">
-                        {allSlots.map((slot, idx) => {
-                          const session = sessions.find(s => s.slots?.includes(slot));
-                          return (
-                            <SlotCard 
-                              key={`${session?._id}-${idx}`} 
-                              slot={slot} 
-                              onClick={() => onSelectSlot(session, slot)} 
-                            />
-                          );
-                        })}
-                      </div>
-                    )}
+
+                  <div className="p-4">
+                    <SlotCarousel 
+                      allSlots={allSlots}
+                      sessions={sessions}
+                      onSelectSlot={onSelectSlot}
+                    />
                   </div>
                 </div>
               );

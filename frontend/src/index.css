@@ -14,6 +14,15 @@
   @apply border-white/15;
 }
 
+/* Hide scrollbar for horizontal scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
 /* Buttons & inputs with glass feel */
 .btn {
   @apply inline-flex items-center gap-2 px-3 py-2 text-sm rounded-xl

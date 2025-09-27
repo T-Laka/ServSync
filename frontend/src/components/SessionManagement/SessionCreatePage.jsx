@@ -35,10 +35,14 @@ function toYMD(date) {
 
 function addMinutes(date, minutes) { return new Date(date.getTime() + minutes * 60000); }
 function localDateTimeToUTC(dateStr, timeStr) {
+  // Create a Date using local clock values and return its ISO (UTC) representation.
+  // Previously this function attempted to manually apply timezoneOffset and
+  // ended up double-shifting times. Using toISOString() on the Date constructed
+  // from local values yields the correct UTC instant for that local wall time.
   const [y, m, d] = dateStr.split("-").map(Number);
   const [hh, mm] = timeStr.split(":").map(Number);
   const local = new Date(y, m - 1, d, hh, mm, 0, 0);
-  return new Date(local.getTime() - local.getTimezoneOffset() * 60000).toISOString();
+  return local.toISOString();
 }
 function localOn(dateStr, timeStr) {
   const [y, m, d] = dateStr.split("-").map(Number);
@@ -158,12 +162,12 @@ export default function SessionCreatePage() {
   function handleSubmit(e) {
     e.preventDefault(); if (!validate()) return;
     const picked = rows.filter(r => r.checked);
-    const dayISO = localDateTimeToUTC(serviceDate, "00:00");
+    // Send serviceDate as YYYY-MM-DD (server will normalize to UTC midnight).
     const payload = {
       branchId: branchId,
       counterId,
       insuranceTypeId: insuranceTypeId,
-      serviceDate: dayISO,
+      serviceDate: serviceDate,
       slots: picked.map(r => ({ startTime: localDateTimeToUTC(serviceDate, r.startHM), endTime: localDateTimeToUTC(serviceDate, r.endHM), capacity: Number(r.capacity)||1, booked:0, overbook:0 })),
       status: "SCHEDULED",
       holidaysFlag: false,
