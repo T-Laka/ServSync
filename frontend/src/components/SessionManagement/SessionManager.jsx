@@ -263,17 +263,20 @@ export default function SessionManager() {
 
                               {/* show per-session rows with edit buttons */}
                               <div className="space-y-2">
-                                {list.map(sess => (
-                                  <div key={sess._id} className="p-2 rounded-md border flex items-center justify-between">
-                                    <div>
-                                      <div className="font-medium">Counter: {sess.counterId}</div>
-                                      <div className="text-xs text-zinc-500">Slots: {(sess.slots||[]).length} • Status: {sess.status} • Holiday: {sess.holidaysFlag ? 'Yes' : 'No'}</div>
+                                {list.map(sess => {
+                                  const counterName = (b.counters || []).find(c => String(c._id) === String(sess.counterId))?.name || sess.counterId;
+                                  return (
+                                    <div key={sess._id} className="p-2 rounded-md border flex items-center justify-between">
+                                      <div>
+                                        <div className="font-medium">Counter: {counterName}</div>
+                                        <div className="text-xs text-zinc-500">Slots: {(sess.slots||[]).length} • Status: {sess.status} • Holiday: {sess.holidaysFlag ? 'Yes' : 'No'}</div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <button onClick={()=>setEditingSession({ ...sess, _branch: b })} className="px-2 py-1 rounded bg-white border inline-flex items-center gap-2 text-sm"><Edit className="w-4 h-4"/> Edit</button>
+                                      </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                      <button onClick={()=>setEditingSession(sess)} className="px-2 py-1 rounded bg-white border inline-flex items-center gap-2 text-sm"><Edit className="w-4 h-4"/> Edit</button>
-                                    </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
 
                               {/* also show merged slots as overview */}
