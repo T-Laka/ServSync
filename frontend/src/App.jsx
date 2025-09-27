@@ -1,23 +1,77 @@
 import 'font-awesome/css/font-awesome.min.css';
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import AdminDashboard from './pages/Admin/AdminDashboard.jsx';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+// adnin area
+
+import AdminLayout from './layouts/AdminLayout.jsx';
+import AdminAnalytics from './components/Admin/AdminAnalytics.jsx';
+import UserList from './components/UserManagement/UserList.jsx';
+import SessionList from './components/SessionManagement/SessionManager.jsx';
+import SessionCreatePage from './components/SessionManagement/SessionCreatePage.jsx';
+
+
+//manager area
+// Manager pages (your components)
+import ManagerLayout from './layouts/ManagerLayout.jsx';
+import ManagerOverview from "./components/Manager/ManagerOverview";
+import ComplaintsList from "./components/Manager/ComplaintsList";
+import FeedbackList from "./components/Manager/FeedbackList";
+import Analytics from "./components/Manager/Analytics";
+import ComplaintDetails from "./components/Manager/ComplaintDetails";
+
+// user area
 import Home from './pages/Home.jsx';
-//import Navbar from './components/Navbar.jsx'; 
+import ContactUs from './pages/ContactUs.jsx';
+import Support from './pages/Support.jsx';
+import Appointments from './pages/Appointments.jsx';
+import FeedbackPage from './pages/FeedbackPage.jsx';
+import NotFound from './pages/NotFound.jsx';
+import PublicLayout from './layouts/UserLayout.jsx';
+
+
 
 function AppContent() {
-  const location = useLocation();
-  // Hide navbar for any route that starts with /admin
-  const hideNavbar = location.pathname.startsWith('/admin');
-
   return (
-    <>
-      {!hideNavbar && <Navbar />}
-      <Routes>
+    <Routes>
+      {/* Public pages (with NavBar) */}
+      <Route element={<PublicLayout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/admin/" element={<AdminDashboard />} />
-      </Routes>
-    </>
+        <Route path="/contact" element={<ContactUs />} />
+        <Route path="/support" element={<Support />} />
+        <Route path="/appointments" element={<Appointments />} />
+        <Route path="/feedback/new" element={<FeedbackPage />} />
+      </Route>
+
+
+      {/* Admin nested layout */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminAnalytics />} />
+          <Route path="users" element={<UserList />} />
+          <Route path="sessions" element={<SessionList />} />
+          <Route path="sessions/create" element={<SessionCreatePage />} />
+          {/* <Route path="complaints" element={<ComplaintsList />} /> */}
+        </Route>
+
+
+
+
+      {/* Manager complaint routes */}
+      {/* Manager (NEW nested routes) */}
+        <Route path="/manager" element={<ManagerLayout />}>
+          <Route index element={<ManagerOverview />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="feedback" element={<FeedbackList />} />
+          <Route path="complaints" element={<ComplaintsList />} />
+          <Route path="complaints/:id" element={<ComplaintDetails />} />
+          {/* <Route path="settings" element={<ManagerSettings />} /> */}
+        </Route>
+
+     
+      
+
+      {/* Fallback */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
 
