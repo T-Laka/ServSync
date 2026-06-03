@@ -1,2 +1,2 @@
 # ServSync
-Smart Appointment &amp; Queue Management System for NITF
+2nd year web application project ( ServSync )
